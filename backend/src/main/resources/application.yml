@@ -1,0 +1,76 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: guide-platform
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/guide_platform
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  level:
+    com.gametips.platform: DEBUG
+
+app:
+  jwt:
+    secret: "guide-platform-jwt-secret-key-please-change-in-production-0123456789abcdef"
+    access-token-ttl: 30m
+    refresh-token-ttl: 7d
+  ai:
+    provider: mock   # mock | openai | claude | qwen
+    openai:
+      api-key: ""
+      base-url: "https://api.openai.com/v1"
+      model: "gpt-4o-mini"
+  upload:
+    local-dir: "./uploads"
+  oauth:
+    mock: true   # 无真实凭据时启用模拟登录
+    redirect-url: "http://localhost:5173/oauth/callback"
+    providers:
+      github:
+        enabled: false
+        client-id: ""
+        client-secret: ""
+        authorization-uri: "https://github.com/login/oauth/authorize"
+        token-uri: "https://github.com/login/oauth/access_token"
+        user-info-uri: "https://api.github.com/user"
+        user-name-attribute: "id"
+        scope: "read:user"
+      wechat:
+        enabled: false
+        client-id: ""
+        client-secret: ""
+        authorization-uri: "https://open.weixin.qq.com/connect/qrconnect"
+        token-uri: "https://api.weixin.qq.com/sns/oauth2/access_token"
+        user-info-uri: "https://api.weixin.qq.com/sns/userinfo"
+        user-name-attribute: "openid"
+        scope: "snsapi_login"
+  search:
+    provider: pg   # pg | elasticsearch
+    elasticsearch:
+      uris: "http://localhost:9200"
+  seed:
+    enabled: true   # 演示环境启动自动填充种子数据，生产请置 false
