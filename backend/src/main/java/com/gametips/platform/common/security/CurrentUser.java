@@ -37,6 +37,15 @@ public final class CurrentUser {
         return get().getUserId();
     }
 
+    /** 未登录返回 0(供骨架/演示阶段使用;真实业务接口应调用 {@link #userId()}) */
+    public static Long userIdOrZero() {
+        try {
+            return get().getUserId();
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return 0L;
+        }
+    }
+
     public static boolean hasRole(String role) {
         return get().getRoles().contains(role);
     }

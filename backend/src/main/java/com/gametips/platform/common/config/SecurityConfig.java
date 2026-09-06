@@ -43,6 +43,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/tools/maps/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tools/simulators/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/ai/parse/**").permitAll()
+                        // Agent V2 骨架:端点暂开放匿名访问(便于联调);V2 正式版改 .authenticated()
+                        .requestMatchers("/api/v1/agent/**").permitAll()
+                        // RAG 管理端点(全量重建索引):骨架阶段开放匿名联调
+                        .requestMatchers("/api/v1/rag/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth -> oauth

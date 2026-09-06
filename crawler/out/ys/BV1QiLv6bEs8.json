@@ -1,0 +1,29 @@
+{
+  "bv_id": "BV1QiLv6bEs8",
+  "av_id": 116616884914302,
+  "url": "https://www.bilibili.com/video/BV1QiLv6bEs8",
+  "title": "原神新周本多托雷怎么打？其实很简单！",
+  "description": "-",
+  "cover_url": "http://i0.hdslb.com/bfs/archive/145553e8affb86460f1f237ff0a1484b855c7621.jpg",
+  "duration": 137,
+  "view_count": 64577,
+  "danmaku_count": 123,
+  "like_count": 834,
+  "publish_time": "2026-05-22T14:49:49",
+  "up_mid": 607986714,
+  "up_name": "梦想破碎于现实",
+  "up_face": "https://i0.hdslb.com/bfs/face/e9c67f8b4a3f90fe4ff565fda8f0f6fdf22726a3.jpg",
+  "pages": [
+    {
+      "part_index": 1,
+      "cid": 38522063020,
+      "title": "P1",
+      "duration": 137
+    }
+  ],
+  "game_slug": "ys",
+  "game_id": 1,
+  "game_name": "原神",
+  "matched_keyword": "原神 攻略",
+  "crawl_time": "2026-09-05T17:24:49.524808"
+}

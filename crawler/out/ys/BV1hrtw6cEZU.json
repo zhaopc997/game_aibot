@@ -1,0 +1,71 @@
+{
+  "bv_id": "BV1hrtw6cEZU",
+  "av_id": 117172881922020,
+  "url": "https://www.bilibili.com/video/BV1hrtw6cEZU",
+  "title": "【原神】冰雪迷宫探行推演（1-8全关卡攻略），帮助霜精抵达终点，险境征者竞锋大赛，准准把握移动时机，重重惊险困难考验，原神7.0版本活动",
+  "description": "-",
+  "cover_url": "http://i1.hdslb.com/bfs/archive/99c37025481cbda4b9ca961e258a8f3a57d20c96.jpg",
+  "duration": 383,
+  "view_count": 80470,
+  "danmaku_count": 50,
+  "like_count": 2361,
+  "publish_time": "2026-08-28T19:28:56",
+  "up_mid": 547643085,
+  "up_name": "MewFurina",
+  "up_face": "https://i0.hdslb.com/bfs/face/de030f18fdf26583044bd58ceb6c2c611e7ad226.jpg",
+  "pages": [
+    {
+      "part_index": 1,
+      "cid": 41364753457,
+      "title": "第1关：弹弹跳跳越过障碍",
+      "duration": 49
+    },
+    {
+      "part_index": 2,
+      "cid": 41364754102,
+      "title": "第2关：准准把握移动时机",
+      "duration": 52
+    },
+    {
+      "part_index": 3,
+      "cid": 41364816072,
+      "title": "第3关：稳稳搭上立方快车",
+      "duration": 51
+    },
+    {
+      "part_index": 4,
+      "cid": 41411020671,
+      "title": "第4关：快快使用增幅立像",
+      "duration": 45
+    },
+    {
+      "part_index": 5,
+      "cid": 41411020984,
+      "title": "第5关：弯弯绕绕避开麻烦",
+      "duration": 34
+    },
+    {
+      "part_index": 6,
+      "cid": 41411021383,
+      "title": "第6关：冷冷静静优选路线",
+      "duration": 40
+    },
+    {
+      "part_index": 7,
+      "cid": 41475703034,
+      "title": "第7关：重重惊险困难考验",
+      "duration": 46
+    },
+    {
+      "part_index": 8,
+      "cid": 41475704097,
+      "title": "第8关：开开心心完美返航",
+      "duration": 66
+    }
+  ],
+  "game_slug": "ys",
+  "game_id": 1,
+  "game_name": "原神",
+  "matched_keyword": "原神 攻略",
+  "crawl_time": "2026-09-05T17:24:38.986442"
+}

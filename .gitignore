@@ -55,3 +55,14 @@ logs/
 *.swp
 *.swo
 *~
+
+# ===== Python / 爬虫 =====
+crawler/.venv/
+.venv-crawler/
+crawler/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# ===== 大型临时截图(UUID 命名) =====
+f1a6dcdb-*.png

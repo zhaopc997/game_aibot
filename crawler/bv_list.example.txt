@@ -1,0 +1,5 @@
+# 手动 BV 号列表(每行一个)
+# 用于"只抓指定视频"模式,代替自动搜索。
+# 用法:  scrapy crawl bili_guide -a bv_file=crawler/bv_list.example.txt
+BV1xxx
+BV1yyy

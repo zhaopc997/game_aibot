@@ -5,8 +5,14 @@ spring:
   application:
     name: guide-platform
 
+  # ───── V2 RAG 用的 ES 客户端(spring-data-elasticsearch) ─────
+  elasticsearch:
+    uris: "http://localhost:9201"
+    socket-timeout: 30s
+    connection-timeout: 5s
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/guide_platform
+    url: jdbc:postgresql://localhost:5433/guide_platform
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -39,10 +45,10 @@ app:
     access-token-ttl: 30m
     refresh-token-ttl: 7d
   ai:
-    provider: mock   # mock | openai | claude | qwen
+    provider: mock   # V1 模块 AiParseProcessor 走 mock;V2 RAG(agent chat)走 openai 兼容的 SiliconFlow
     openai:
-      api-key: ""
-      base-url: "https://api.openai.com/v1"
+      api-key: ${OPENAI_API_KEY:sk-mock}
+      base-url: "https://api.siliconflow.cn/v1"
       model: "gpt-4o-mini"
   upload:
     local-dir: "./uploads"
@@ -54,7 +60,7 @@ app:
         enabled: false
         client-id: ""
         client-secret: ""
-        authorization-uri: "https://github.com/login/oauth/authorize"
+        authorization-uri: "https://github.com/login/oauth/access_token"
         token-uri: "https://github.com/login/oauth/access_token"
         user-info-uri: "https://api.github.com/user"
         user-name-attribute: "id"
@@ -69,8 +75,24 @@ app:
         user-name-attribute: "openid"
         scope: "snsapi_login"
   search:
-    provider: pg   # pg | elasticsearch
+    provider: elasticsearch   # V2 切到 ES(原 pg 降级用)
     elasticsearch:
-      uris: "http://localhost:9200"
+      uris: "http://localhost:9201"
+
+  # ───── V2 AI Copilot RAG 配置(§4.4-4.6 architecture-v2) ─────
+  rag:
+    # 1. Embedding:SiliconFlow 兼容 OpenAI 接口
+    embedding:
+      base-url: "https://api.siliconflow.cn/v1"
+      api-key: "${SILICONFLOW_API_KEY:}"     # 留空则降级为 BM25-only
+      model: "Pro/BAAI/bge-m3"
+      dim: 1024
+      timeout-seconds: 30
+    # 2. 索引
+    index-name: "guide_chunks"
+    # 3. 检索
+    top-k: 5
+    use-bm25: true
+    use-knn: true            # 需 embedding 配齐才生效
   seed:
     enabled: true   # 演示环境启动自动填充种子数据，生产请置 false

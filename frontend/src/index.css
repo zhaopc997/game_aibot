@@ -1,93 +1,80 @@
-:root {
-  color-scheme: light dark;
-  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-canvas: 250 248 245;   /* #FAF8F5 */
+    --color-accent:  255 107 71;    /* #FF6B47 */
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-ink-900 font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* 平滑滚动,TOC/AI 对话面板用得上 */
+  * {
+    scroll-behavior: smooth;
+  }
+
+  /* 选中文本用强调色 */
+  ::selection {
+    background-color: theme('colors.accent.200');
+    color: theme('colors.accent.900');
+  }
+
+  /* 滚动条极简化 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-100 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-300;
+  }
 }
 
-* { box-sizing: border-box; }
+@layer components {
+  /* 大圆角卡(基础层) */
+  .card-base {
+    @apply bg-surface rounded-2xl shadow-soft transition-all duration-300 ease-soft;
+  }
 
-body {
-  margin: 0;
-  background: #f5f6f8;
-  color: #1a1a1a;
-}
+  /* 悬浮上浮卡 */
+  .card-hover {
+    @apply hover:shadow-lift hover:-translate-y-0.5;
+  }
 
-a { color: #3b82f6; text-decoration: none; }
-
-.container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 16px;
+  /* 段落排版(攻略详情用) */
+  .prose-article {
+    @apply text-ink-700 leading-8;
+  }
+  .prose-article h2 {
+    @apply text-2xl font-display text-ink-900 mt-10 mb-4;
+  }
+  .prose-article h3 {
+    @apply text-xl font-display text-ink-900 mt-8 mb-3;
+  }
+  .prose-article p {
+    @apply my-4;
+  }
+  .prose-article code {
+    @apply px-1.5 py-0.5 rounded bg-ink-100 text-accent-600 text-sm;
+  }
+  .prose-article pre {
+    @apply bg-ink-900 text-ink-100 rounded-2xl p-5 my-6 overflow-x-auto text-sm;
+  }
+  .prose-article blockquote {
+    @apply border-l-4 border-accent-300 pl-4 my-4 italic text-ink-500;
+  }
 }
-
-.card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.08);
-  margin-bottom: 12px;
-}
-
-.btn {
-  display: inline-block;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  cursor: pointer;
-  font-size: 14px;
-}
-.btn-primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
-.btn-block { display: block; width: 100%; }
-
-.input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 12px;
-}
-
-.navbar {
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 12px 0;
-  margin-bottom: 20px;
-}
-.navbar .container { display: flex; align-items: center; gap: 16px; }
-.navbar .brand { font-weight: 700; font-size: 18px; color: #3b82f6; }
-.navbar .spacer { flex: 1; }
-
-.form-card { max-width: 400px; margin: 60px auto; }
-.tag {
-  display: inline-block;
-  background: #eff6ff;
-  color: #2563eb;
-  border-radius: 6px;
-  padding: 2px 8px;
-  font-size: 12px;
-  margin-right: 6px;
-}
-.muted { color: #6b7280; font-size: 13px; }
-
-.game-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-.game-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: #fff;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.08);
-  color: inherit;
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.game-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59,130,246,.15);
-}
-.game-name { font-weight: 600; font-size: 15px; }
