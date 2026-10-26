@@ -1,0 +1,49 @@
+# ═══════════════════════════════════════════════════════════════
+# helozero.com 站点配置
+#   · 自动申请/续期 Let's Encrypt 证书
+#   · 反代到本机 8088（应用只绑回环，不直接暴露公网）
+# ═══════════════════════════════════════════════════════════════
+
+{
+	email admin@helozero.com
+
+	# 首次调试建议先注释下面两行，改用 staging 环境验证，避免消耗正式额度：
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+# ───── 主站 ─────
+helozero.com {
+	encode zstd gzip
+
+	header {
+		# 强制 HTTPS（1 年），含子域
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# 反代到应用（docker 端口只绑 127.0.0.1，公网只能经 Caddy 进来）
+	reverse_proxy 127.0.0.1:8088 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		# AI 问答等长耗时接口
+		transport http {
+			read_timeout 180s
+			write_timeout 180s
+		}
+	}
+
+	# 访问日志：输出到 stdout，由 systemd/journald 收集
+	# 查看：journalctl -u caddy -f
+	# （不用文件日志：发行版 unit 有 ProtectSystem=full，/var/log 只读）
+	log {
+		format json
+	}
+}
+
+# ───── www 跳转到主域 ─────
+www.helozero.com {
+	redir https://helozero.com{uri} permanent
+}
