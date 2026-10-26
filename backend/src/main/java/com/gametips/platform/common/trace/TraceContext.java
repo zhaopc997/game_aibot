@@ -31,7 +31,14 @@ public final class TraceContext {
 
     /** 生成新的 traceId 并写入 MDC;由 TraceIdFilter 在请求入口调用。 */
     public static String init() {
-        String id = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        return init(null);
+    }
+
+    /** 写入指定或新生成的 traceId 到 MDC。 */
+    public static String init(String incomingId) {
+        String id = (incomingId != null && !incomingId.isBlank())
+                ? incomingId.trim()
+                : UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         MDC.put(MDC_KEY, id);
         return id;
     }

@@ -1,9 +1,13 @@
 package com.gametips.platform.common.seed;
 
 import com.gametips.platform.module.ai.service.AiParseService;
+import com.gametips.platform.module.content.domain.Article;
 import com.gametips.platform.module.content.domain.Guide;
 import com.gametips.platform.module.content.domain.GuideStatus;
+import com.gametips.platform.module.content.domain.WikiEntry;
+import com.gametips.platform.module.content.repository.ArticleRepository;
 import com.gametips.platform.module.content.repository.GuideRepository;
+import com.gametips.platform.module.content.repository.WikiEntryRepository;
 import com.gametips.platform.module.user.domain.Role;
 import com.gametips.platform.module.user.domain.User;
 import com.gametips.platform.module.user.domain.UserRole;
@@ -44,19 +48,23 @@ public class DataSeeder implements CommandLineRunner {
     private final GameRepository gameRepository;
     private final GameVersionRepository gameVersionRepository;
     private final GuideRepository guideRepository;
+    private final ArticleRepository articleRepository;
+    private final WikiEntryRepository wikiEntryRepository;
     private final AiParseService aiParseService;
 
     @Override
     @Transactional
     public void run(String... args) {
-        if (gameRepository.count() > 0) {
-            log.info("[seed] game table not empty, skip seeding");
-            return;
-        }
         seedAccounts();
-        seedGames();
+        if (gameRepository.count() == 0) {
+            seedGames();
+            log.info("[seed] demo games and guides seeded");
+        } else {
+            log.info("[seed] game table not empty, skip seeding games");
+        }
+        seedArticlesAndWiki();
         demoAiPipeline();
-        log.info("[seed] demo data seeded");
+        log.info("[seed] demo data verification complete");
     }
 
     private void seedAccounts() {
@@ -130,6 +138,54 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.warn("[seed] ai demo skipped: {}", e.getMessage());
         }
+    }
+
+    /**
+     * 为前几款游戏填充资讯与百科演示数据（仅当 article 表为空时）。
+     */
+    private void seedArticlesAndWiki() {
+        if (articleRepository.count() > 0) {
+            return;
+        }
+        long authorId = userRepository.findByUsername("tester").orElseThrow().getId();
+        long now = System.currentTimeMillis();
+        var gamed = List.of(
+                Map.of("gameId", 1L, "game", "艾尔登法环"),
+                Map.of("gameId", 2L, "game", "原神"),
+                Map.of("gameId", 3L, "game", "塞尔达传说：王国之泪"),
+                Map.of("gameId", 4L, "game", "黑神话：悟空"));
+        for (var entry : gamed) {
+            Long gameId = (Long) entry.get("gameId");
+            String game = (String) entry.get("game");
+
+            Article a = new Article();
+            a.setGameId(gameId);
+            a.setAuthorId(authorId);
+            a.setTitle(game + "版本更新速览:新内容与新玩法解析");
+            a.setCategory("版本资讯");
+            a.setContent("本文整理了" + game + "近期版本更新的核心内容,包括新玩法、平衡调整与活动预告,帮助玩家快速掌握版本变化。");
+            a.setStatus("PUBLISHED");
+            a.setPublishedAt(java.time.Instant.ofEpochMilli(now - 86400000L));
+            articleRepository.save(a);
+
+            Article a2 = new Article();
+            a2.setGameId(gameId);
+            a2.setAuthorId(authorId);
+            a2.setTitle(game + "社区攻略大赛开启:赢取限定头像框");
+            a2.setCategory("活动公告");
+            a2.setContent("面向全站玩家的攻略创作大赛现已开启,提交符合要求的攻略即可参与评奖,优秀作品将获得官方推荐与限定奖励。");
+            a2.setStatus("PUBLISHED");
+            a2.setPublishedAt(java.time.Instant.ofEpochMilli(now - 172800000L));
+            articleRepository.save(a2);
+
+            WikiEntry w = new WikiEntry();
+            w.setGameId(gameId);
+            w.setTitle(game + "入门指南:新手必知基础概念");
+            w.setContent("本词条涵盖" + game + "的核心玩法、资源系统与新手常见问题,是快速上手的必备资料。");
+            w.setLastUpdated(java.time.Instant.ofEpochMilli(now - 86400000L));
+            wikiEntryRepository.save(w);
+        }
+        log.info("[seed] articles & wiki demo seeded");
     }
 
     private Map<String, Object> buildContent(List<StepSeed> steps) {

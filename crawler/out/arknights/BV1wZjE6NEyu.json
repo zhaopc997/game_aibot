@@ -1,0 +1,29 @@
+{
+  "bv_id": "BV1wZjE6NEyu",
+  "av_id": 116782157405132,
+  "url": "https://www.bilibili.com/video/BV1wZjE6NEyu",
+  "title": "【明日方舟】凯姐姐教你方舟配队",
+  "description": "凯姐姐教你方舟配队！",
+  "cover_url": "http://i1.hdslb.com/bfs/archive/fc27ecb5d5653f37af5ce522f0baf8ba7c56e6af.jpg",
+  "duration": 220,
+  "view_count": 81570,
+  "danmaku_count": 195,
+  "like_count": 3568,
+  "publish_time": "2026-06-21T18:00:00",
+  "up_mid": 1683678,
+  "up_name": "人好嘴甜凯尔希",
+  "up_face": "https://i0.hdslb.com/bfs/face/a07e51ca13ccf7d1040b39b0bb06e169578d0365.jpg",
+  "pages": [
+    {
+      "part_index": 1,
+      "cid": 39265567628,
+      "title": "【明日方舟】凯姐姐教你方舟配队",
+      "duration": 220
+    }
+  ],
+  "game_slug": "arknights",
+  "game_id": 9,
+  "game_name": "明日方舟",
+  "matched_keyword": "明日方舟 攻略",
+  "crawl_time": "2026-09-07T19:19:45.312941"
+}

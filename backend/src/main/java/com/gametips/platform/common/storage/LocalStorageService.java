@@ -36,14 +36,19 @@ public class LocalStorageService implements StorageService {
     public String store(String key, InputStream in, String contentType, long size) {
         String safeKey = (key == null || key.isBlank())
                 ? UUID.randomUUID().toString() : key;
+        // 白名单字符，杜绝路径穿越与特殊字符文件名
+        if (!safeKey.matches("[A-Za-z0-9._-]+")) {
+            throw new IllegalArgumentException("非法文件名");
+        }
         String dateDir = LocalDate.now().toString();
         Path dir = root.resolve(dateDir).normalize();
-        if (!dir.startsWith(root)) {
+        Path target = dir.resolve(safeKey).normalize();
+        // containment 双端校验：dir 与 target 都必须位于 root 之下
+        if (!target.startsWith(root) || !dir.startsWith(root)) {
             throw new IllegalArgumentException("非法路径");
         }
         try {
             Files.createDirectories(dir);
-            Path target = dir.resolve(safeKey).normalize();
             Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
             return "/uploads/" + dateDir + "/" + safeKey;
         } catch (IOException e) {

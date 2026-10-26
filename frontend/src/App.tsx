@@ -11,8 +11,13 @@ import AIChatPage from './pages/AIChatPage'
 import MapViewerPage from './pages/MapViewerPage'
 import SimulatorPage from './pages/SimulatorPage'
 import QAPage from './pages/QAPage'
+import QuestionDetailPage from './pages/QuestionDetailPage'
 import NotificationsPage from './pages/NotificationsPage'
 import AdminPage from './pages/AdminPage'
+import ReviewAdminPage from './pages/ReviewAdminPage'
+import UserAdminPage from './pages/UserAdminPage'
+import SettingsAdminPage from './pages/SettingsAdminPage'
+import OpsAdminPage from './pages/OpsAdminPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ProfilePage from './pages/ProfilePage'
@@ -43,6 +48,7 @@ export default function App() {
         />
         <Route path="/ai" element={<AIChatPage />} />
         <Route path="/qa" element={<QAPage />} />
+        <Route path="/qa/:id" element={<QuestionDetailPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route
           path="/profile"
@@ -51,6 +57,22 @@ export default function App() {
         <Route
           path="/admin"
           element={token ? <AdminPage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/admin/reviews"
+          element={token ? <ReviewAdminPage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/admin/users"
+          element={token ? <UserAdminPage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/admin/settings"
+          element={token ? <SettingsAdminPage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/admin/ops"
+          element={token ? <OpsAdminPage /> : <Navigate to="/login" replace />}
         />
       </Route>
 

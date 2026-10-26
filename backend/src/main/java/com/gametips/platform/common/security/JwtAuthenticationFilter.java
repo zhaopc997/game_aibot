@@ -21,7 +21,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
+    private static final String USER_STATUS_CACHE_PREFIX = "user:status:";
+    private static final java.time.Duration USER_STATUS_CACHE_TTL = java.time.Duration.ofMinutes(5);
+
     private final JwtService jwtService;
+    private final com.gametips.platform.module.user.repository.UserRepository userRepository;
+    private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -36,6 +41,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String username = claims.get("username", String.class);
                 @SuppressWarnings("unchecked")
                 List<String> roles = claims.get("roles", List.class);
+
+                // 禁用逻辑：带 Redis 缓存（5 分钟 TTL），降低对 PG 的穿透
+                String cacheKey = USER_STATUS_CACHE_PREFIX + userId;
+                String status = null;
+                try {
+                    status = redisTemplate.opsForValue().get(cacheKey);
+                } catch (Exception ignored) {}
+
+                if (status == null) {
+                    com.gametips.platform.module.user.domain.User user =
+                            userRepository.findById(userId).orElse(null);
+                    if (user == null) {
+                        status = "NOT_FOUND";
+                    } else {
+                        status = user.getStatus() != null ? user.getStatus().name() : "DISABLED";
+                    }
+                    try {
+                        redisTemplate.opsForValue().set(cacheKey, status, USER_STATUS_CACHE_TTL);
+                    } catch (Exception ignored) {}
+                }
+
+                if (!"NORMAL".equals(status)) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 LoginUser loginUser = new LoginUser(userId, username, roles);
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(

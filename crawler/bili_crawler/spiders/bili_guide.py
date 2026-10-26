@@ -23,30 +23,37 @@ from bili_crawler.items import GuideItem
 
 
 # ───── 目标游戏规则(可扩展) ─────
+# game_id 对应数据库 guide_platform.game 表 id(与原神/黑神话/英雄联盟等一一对应)
 GAME_RULES = {
     'ys': {  # 原神
         'name': '原神',
-        'game_id': 1,
-        'search_keywords': ['原神 攻略', '原神 圣遗物', 'Genshin Impact 攻略'],
+        'game_id': 2,
+        'search_keywords': ['原神 攻略', '原神 圣遗物', '原神 配队', '原神 深渊', '原神 任务', '原神 活动', 'Genshin Impact 攻略'],
         'must_keywords': ['原神', 'Genshin'],
     },
-    'wzry': {  # 王者荣耀
-        'name': '王者荣耀',
+    'wukong': {  # 黑神话：悟空
+        'name': '黑神话：悟空',
         'game_id': 4,
-        'search_keywords': ['王者荣耀 攻略', '王者荣耀 上分', '王者荣耀 英雄'],
-        'must_keywords': ['王者'],
+        'search_keywords': ['黑神话悟空 攻略', '黑神话悟空 Boss', '黑神话 天命人', '黑神话 全成就', '黑神话 装备', '黑神话 剧情'],
+        'must_keywords': ['黑神话', '悟空'],
     },
     'lol': {  # 英雄联盟
         'name': '英雄联盟',
-        'game_id': 5,
-        'search_keywords': ['英雄联盟 攻略', 'LOL 上分', '英雄联盟 英雄'],
+        'game_id': 6,
+        'search_keywords': ['英雄联盟 攻略', 'LOL 上分', '英雄联盟 对线', '英雄联盟 打野', 'LOL 教学', '英雄联盟 版本'],
         'must_keywords': ['英雄联盟', 'LOL'],
     },
-    'dzpd': {  # 蛋仔派对
-        'name': '蛋仔派对',
-        'game_id': 6,
-        'search_keywords': ['蛋仔派对 攻略', '蛋仔派对 技巧'],
-        'must_keywords': ['蛋仔'],
+    'starrail': {  # 崩坏：星穹铁道
+        'name': '崩坏：星穹铁道',
+        'game_id': 8,
+        'search_keywords': ['崩坏星穹铁道 攻略', '星穹铁道 配队', '星穹铁道 遗器', '星穹铁道 任务', '星穹铁道 活动', '星穹铁道 模拟宇宙'],
+        'must_keywords': ['星穹铁道', '星铁'],
+    },
+    'arknights': {  # 明日方舟
+        'name': '明日方舟',
+        'game_id': 9,
+        'search_keywords': ['明日方舟 攻略', '明日方舟 关卡', '明日方舟 基建', '明日方舟 活动', '明日方舟 干员', '明日方舟 危机合约'],
+        'must_keywords': ['明日方舟', '方舟'],
     },
 }
 
@@ -101,15 +108,16 @@ class BiliGuideSpider(scrapy.Spider):
             self.playwright_page = None
 
     def start_requests(self):
-        """入口:对每个关键词拉搜索结果,触发详情页抓取。"""
+        """入口:对每个关键词拉多页搜索结果,扩大候选池,触发详情页抓取。"""
         for kw in self.rule['search_keywords']:
-            # 每个关键词先拉 1 页(30 个)候选,够用
-            yield scrapy.Request(
-                SEARCH_URL.format(kw=quote(kw), page=1),
-                callback=self.parse_search,
-                meta={'keyword': kw, 'page': 1},
-                dont_filter=True,
-            )
+            # 每个关键词拉 3 页(共约 90 个候选),覆盖更多不同的攻略视频
+            for page in (1, 2, 3):
+                yield scrapy.Request(
+                    SEARCH_URL.format(kw=quote(kw), page=page),
+                    callback=self.parse_search,
+                    meta={'keyword': kw, 'page': page},
+                    dont_filter=True,
+                )
 
     def parse_search(self, response):
         """解析搜索 API,过滤出候选 BV,逐个抓详情。

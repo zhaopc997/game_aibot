@@ -14,6 +14,10 @@ public interface GuideRepository extends JpaRepository<Guide, Long> {
 
     Page<Guide> findByGameIdAndStatusOrderByCreatedAtDesc(Long gameId, GuideStatus status, Pageable pageable);
 
+    Page<Guide> findByStatusOrderByCreatedAtDesc(GuideStatus status, Pageable pageable);
+
+    List<Guide> findTop100ByStatusInOrderByUpdatedAtDesc(java.util.Collection<GuideStatus> statuses);
+
     List<Guide> findByGameIdAndStatus(Long gameId, GuideStatus status);
 
     List<Guide> findTop10ByGameIdAndStatusOrderByUpdatedAtDesc(Long gameId, GuideStatus status);
@@ -51,4 +55,12 @@ public interface GuideRepository extends JpaRepository<Guide, Long> {
                        @Param("gameId") Long gameId,
                        @Param("status") String status,
                        Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Guide g SET g.likeCount = coalesce(g.likeCount, 0) + 1 WHERE g.id = :id")
+    void incrementLikeCount(@Param("id") Long id);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Guide g SET g.likeCount = CASE WHEN coalesce(g.likeCount, 0) > 0 THEN g.likeCount - 1 ELSE 0 END WHERE g.id = :id")
+    void decrementLikeCount(@Param("id") Long id);
 }

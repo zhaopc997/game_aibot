@@ -12,6 +12,8 @@ import com.gametips.platform.module.community.repository.FavoriteRepository;
 import com.gametips.platform.module.community.repository.LikeRepository;
 import com.gametips.platform.module.community.repository.QuestionRepository;
 import com.gametips.platform.module.community.repository.ReportRepository;
+import com.gametips.platform.module.content.repository.GuideRepository;
+import com.gametips.platform.module.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,8 @@ public class CommunityService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final ReportRepository reportRepository;
+    private final GuideRepository guideRepository;
+    private final NotificationService notificationService;
 
     // ---------- 点赞 ----------
 
@@ -35,6 +39,9 @@ public class CommunityService {
         return likeRepository.findByTargetTypeAndTargetIdAndUserId(targetType, targetId, userId)
                 .map(like -> {
                     likeRepository.delete(like);
+                    if ("guide".equalsIgnoreCase(targetType)) {
+                        guideRepository.decrementLikeCount(targetId);
+                    }
                     return false;
                 })
                 .orElseGet(() -> {
@@ -43,6 +50,15 @@ public class CommunityService {
                     like.setTargetId(targetId);
                     like.setUserId(userId);
                     likeRepository.save(like);
+                    if ("guide".equalsIgnoreCase(targetType)) {
+                        guideRepository.incrementLikeCount(targetId);
+                        guideRepository.findById(targetId).ifPresent(g -> {
+                            if (!g.getAuthorId().equals(userId)) {
+                                notificationService.create(g.getAuthorId(), "LIKE", "收到新的点赞",
+                                        "你的攻略《" + g.getTitle() + "》收到了一个赞", "guide", targetId);
+                            }
+                        });
+                    }
                     return true;
                 });
     }
@@ -83,7 +99,16 @@ public class CommunityService {
     }
 
     public List<Question> questions(Long gameId) {
-        return questionRepository.findTop50ByGameIdOrderByCreatedAtDesc(gameId);
+        // gameId 为空表示"全站最新"，必须走不带 game_id 条件的查询：
+        // 传 null 给 findByGameId... 会生成 game_id = NULL，SQL 中恒为 false。
+        return gameId == null
+                ? questionRepository.findTop50ByOrderByCreatedAtDesc()
+                : questionRepository.findTop50ByGameIdOrderByCreatedAtDesc(gameId);
+    }
+
+    public Question getQuestion(Long questionId) {
+        return questionRepository.findById(questionId)
+                .orElseThrow(() -> new BizException(ErrorCodes.NOT_FOUND, "问题不存在"));
     }
 
     @Transactional

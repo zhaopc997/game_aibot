@@ -41,7 +41,11 @@ public class ElasticsearchIndexBootstrap {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    public void bootstrap() {
+    public void onApplicationReady() {
+        bootstrap();
+    }
+
+    public synchronized void bootstrap() {
         try {
             // 1. 检查索引是否已存在
             if (indexExists()) {

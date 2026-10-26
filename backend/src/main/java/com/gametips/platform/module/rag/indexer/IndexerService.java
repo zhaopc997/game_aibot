@@ -1,12 +1,16 @@
 package com.gametips.platform.module.rag.indexer;
 
 import com.gametips.platform.module.rag.client.EmbeddingClient;
+import com.gametips.platform.module.rag.config.ElasticsearchIndexBootstrap;
 import com.gametips.platform.module.rag.config.RagProperties;
 import com.gametips.platform.module.content.domain.Guide;
 import com.gametips.platform.module.content.repository.GuideRepository;
+import com.gametips.platform.module.review.event.GuideReviewFinishedEvent;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -15,6 +19,7 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,23 +53,52 @@ public class IndexerService {
     private final ElasticsearchOperations esOps;
     private final EmbeddingClient embeddingClient;
     private final RagProperties ragProps;
+    private final ElasticsearchIndexBootstrap indexBootstrap;
 
     private final IndexCoordinates index = IndexCoordinates.of("guide_chunks");
 
-    /** 启动时确保索引存在(创建 + mapping 同步) */
+    /** 启动时确保索引存在(含 ngram analyzer 与 mapping 同步) */
     @PostConstruct
     public void ensureIndex() {
         try {
-            IndexOperations ops = esOps.indexOps(GuideChunkDoc.class);
-            if (!ops.exists()) {
-                ops.create();
-                ops.putMapping(ops.createMapping(GuideChunkDoc.class));
-                log.info("[indexer] 创建索引 guide_chunks");
-            } else {
-                log.info("[indexer] 索引 guide_chunks 已存在");
-            }
+            indexBootstrap.bootstrap();
         } catch (Exception e) {
             log.warn("[indexer] 索引初始化失败(ES 未启动?): {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 启动后自愈：RAG 索引为空但库中有攻略时，自动全量重建。
+     *
+     * <p>为什么需要：{@link #rebuildAll()} 此前只能通过管理接口
+     * {@code POST /api/v1/rag/reindex} 手动触发。于是每当
+     * <ul>
+     *   <li>做了数据迁移（新库有数据、索引仍为空）</li>
+     *   <li>ES 数据卷被重建</li>
+     * </ul>
+     * 时，索引会长期保持 0 条，表现为 AI 助手对任何问题都回答
+     * 「未找到相关攻略」，且<b>重启不会恢复</b>，排查时极易误判为模型问题。
+     *
+     * <p>这里做一次自动补偿，让系统可自愈；仅在索引确实为空时才触发，
+     * 不会造成每次重启都全量重灌。
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void autoRebuildIfEmpty() {
+        try {
+            long docCount = esOps.count(Query.findAll(), index);
+            long guideCount = guideRepository.count();
+            // 条件用"索引落后于数据库"而非"索引为空"：
+            // 批量导入攻略后（本项目实测从 30 篇增到 52 篇）索引会只覆盖旧数据，
+            // 若只在为空时重建，新增攻略将永远搜不到，且没有任何报错。
+            if (docCount < guideCount) {
+                log.info("[indexer] RAG 索引 {} 条落后于库中 {} 篇攻略，自动触发全量重建…", docCount, guideCount);
+                int ok = rebuildAll();
+                log.info("[indexer] 自动重建完成，共写入 {} 篇", ok);
+            } else {
+                log.info("[indexer] RAG 索引现有 {} 条（库中 {} 篇攻略），无需重建", docCount, guideCount);
+            }
+        } catch (Exception e) {
+            log.warn("[indexer] 启动自愈检查失败（ES 不可用？）: {}", e.getMessage());
         }
     }
 
@@ -75,8 +109,7 @@ public class IndexerService {
     @Transactional(readOnly = true)
     public int rebuildAll() {
         log.info("[indexer] 开始全量重建索引…");
-        // 索引由 ElasticsearchIndexBootstrap 在启动时建好(含 ngram analyzer),
-        // 这里灌数据,不动 mapping(否则会覆盖 bootstrap 的 ngram analyzer)。
+        indexBootstrap.bootstrap();
         List<Guide> all = guideRepository.findAll();
         int ok = 0;
         for (Guide g : all) {
@@ -86,7 +119,25 @@ public class IndexerService {
         return ok;
     }
 
-    /** 索引单篇(供 Admin 后台新增/更新 guide 时调用,V2 阶段先不接,只走全量) */
+    @EventListener
+    public void onGuideReviewFinished(GuideReviewFinishedEvent event) {
+        if (event.isPassed()) {
+            guideRepository.findById(event.getGuideId()).ifPresent(guide -> {
+                boolean ok = indexOne(guide);
+                log.info("[indexer] 增量索引审核通过攻略 id={} title='{}' result={}",
+                        guide.getId(), guide.getTitle(), ok);
+            });
+        } else {
+            try {
+                esOps.delete(String.valueOf(event.getGuideId()), index);
+                log.info("[indexer] 审核未通过，移除索引 guide id={}", event.getGuideId());
+            } catch (Exception e) {
+                log.debug("[indexer] 移除索引忽略异常: {}", e.getMessage());
+            }
+        }
+    }
+
+    /** 索引单篇(供 Admin 审核通过或全量重建时调用) */
     public boolean indexOne(Guide g) {
         try {
             GuideChunkDoc doc = toDoc(g);
@@ -146,7 +197,8 @@ public class IndexerService {
         StringBuilder sb = new StringBuilder();
         sb.append(g.getTitle()).append('\n');
         if (g.getSummary() != null) sb.append(g.getSummary()).append('\n');
-        // steps JSON 解析
+        // steps JSON 解析:标题与正文都要索引,否则搜"钟离怎么叠护盾"这类
+        // 具体步骤内容命中不到(step.description 是攻略的实质内容)
         try {
             if (g.getContent() != null) {
                 Map<String, Object> c = g.getContent();
@@ -156,10 +208,22 @@ public class IndexerService {
                     for (Map<String, Object> s : steps) {
                         Object t = s.get("title");
                         if (t != null) sb.append("· ").append(t).append('\n');
+                        Object d = s.get("description");
+                        if (d != null && !d.toString().isBlank()) {
+                            sb.append(indent(String.valueOf(d), MAX_STEP_DESC_LEN)).append('\n');
+                        }
                     }
                 }
             }
         } catch (Exception ignore) { /* steps 结构异常时忽略 */ }
         return sb.toString();
+    }
+
+    /** 单个 step 正文最多索引的字符数,防止超长文本撑爆索引。 */
+    private static final int MAX_STEP_DESC_LEN = 600;
+
+    private static String indent(String s, int max) {
+        String trimmed = s.length() <= max ? s : s.substring(0, max) + "…";
+        return "  " + trimmed.replace("\n", " ");
     }
 }

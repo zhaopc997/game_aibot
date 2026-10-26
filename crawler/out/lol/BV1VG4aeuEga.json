@@ -1,0 +1,29 @@
+{
+  "bv_id": "BV1VG4aeuEga",
+  "av_id": 113112426483300,
+  "url": "https://www.bilibili.com/video/BV1VG4aeuEga",
+  "title": "《从零开始英雄联盟》01 键位和改键",
+  "description": "身边有朋友入坑，也一直想做这个系列，第一次做可能质量不太高，这期只是讲讲最简单的，下一期会考虑走a和卡位之类的，三连支持，有问题随便问，我都会解答，感谢！",
+  "cover_url": "http://i0.hdslb.com/bfs/archive/641012ec5a4b469e56f25d291c3033850f230dac.jpg",
+  "duration": 399,
+  "view_count": 639285,
+  "danmaku_count": 590,
+  "like_count": 21395,
+  "publish_time": "2024-09-10T17:20:03",
+  "up_mid": 25711244,
+  "up_name": "老彩虹糖了",
+  "up_face": "https://i2.hdslb.com/bfs/face/c991b181b10dc6a0f9d0ed31f3183cae2e8ff839.jpg",
+  "pages": [
+    {
+      "part_index": 1,
+      "cid": 25811420452,
+      "title": "《从零开始英雄联盟》01 键位和改键",
+      "duration": 399
+    }
+  ],
+  "game_slug": "lol",
+  "game_id": 6,
+  "game_name": "英雄联盟",
+  "matched_keyword": "英雄联盟 攻略",
+  "crawl_time": "2026-09-07T19:17:51.407043"
+}

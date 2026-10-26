@@ -20,7 +20,7 @@ load_dotenv(ROOT / 'crawler' / '.env')
 
 PG = dict(
     host=os.getenv('PG_HOST', 'localhost'),
-    port=int(os.getenv('PG_PORT', 5433)),
+    port=int(os.getenv('PG_PORT', 5432)),
     dbname=os.getenv('PG_DB', 'guide_platform'),
     user=os.getenv('PG_USER', 'postgres'),
     password=os.getenv('PG_PASSWORD', 'postgres'),
@@ -58,7 +58,9 @@ def transform(item: dict) -> dict:
         'content':   json.dumps({'steps': steps}, ensure_ascii=False),
         'tags':      json.dumps(['B站', item['game_name']], ensure_ascii=False),
         'author_id': AUTHOR_ID,
-        'type':      'MANUAL',
+        # 采集来的机器内容必须标记为 CRAWLED,不能混同为人工原创 MANUAL。
+        # 枚举语义: MANUAL=人工原创 / AI_GENERATED=AI 生成 / CRAWLED=外部采集
+        'type':      'CRAWLED',
         'status':    'DRAFT',  # 人工审核后再 PUBLISHED
     }
 

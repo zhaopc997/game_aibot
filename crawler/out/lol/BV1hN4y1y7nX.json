@@ -1,0 +1,29 @@
+{
+  "bv_id": "BV1hN4y1y7nX",
+  "av_id": 874550400,
+  "url": "https://www.bilibili.com/video/BV1hN4y1y7nX",
+  "title": "如何下载英雄联盟",
+  "description": "",
+  "cover_url": "http://i2.hdslb.com/bfs/archive/5143bb8c91b56883551bbaeb424d761957d343f7.jpg",
+  "duration": 200,
+  "view_count": 1163686,
+  "danmaku_count": 540,
+  "like_count": 36938,
+  "publish_time": "2023-10-12T16:02:40",
+  "up_mid": 10485312,
+  "up_name": "ZoveyChen",
+  "up_face": "https://i0.hdslb.com/bfs/face/2ceab01c6b80beb3878ce16d5e4b38b16dd135ae.jpg",
+  "pages": [
+    {
+      "part_index": 1,
+      "cid": 1296841096,
+      "title": "如何下载英雄联盟",
+      "duration": 200
+    }
+  ],
+  "game_slug": "lol",
+  "game_id": 6,
+  "game_name": "英雄联盟",
+  "matched_keyword": "英雄联盟 攻略",
+  "crawl_time": "2026-09-07T19:17:31.210272"
+}

@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ContentReviewServiceTest {
 
-    private final ContentReviewService service = new ContentReviewService(null, null);
+    private final ContentReviewService service = new ContentReviewService(null, null, null);
 
     @Test
     void shouldClassifyLowRiskWithoutSensitiveWords() {

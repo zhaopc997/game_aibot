@@ -1,0 +1,79 @@
+# 本地启动专用 compose（独立文件，不与基础文件叠加）
+#
+# 为什么不叠加 docker-compose.local.yml：
+#   compose 的 ports 是"追加"而非"替换"，叠加会同时保留基础端口与新端口，
+#   产生重复映射（实测合并后出现 9200->9200 与 9201->9200 并存），
+#   且会抢占其他项目已占用的端口。本文件直接给出最终端口，无需叠加。
+#
+# 原因：本机 6379 / 9200 / 9000 已被其他项目占用
+#   - mishop-redis              → 6379
+#   - mishop-elasticsearch      → 9200
+#   - ti-smart-agent-deep-minio → 9000 / 9001
+# 故把 game_aibot 的依赖服务改到独立端口，并使用独立容器名与数据卷，
+# 完全隔离，不触碰既有容器与其数据。
+#
+# 用法：
+#   docker compose -p gameaibot -f docker-compose.local.yml up -d
+#
+# 后端连接参数（application.yml 已支持这些环境变量）：
+#   DB_URL=jdbc:postgresql://localhost:5432/guide_platform
+#   REDIS_PORT=6380
+#   ES_URIS=http://localhost:9201
+# （MinIO 当前后端走 LocalStorageService，未使用，无需连接）
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gameaibot-local-postgres
+    environment:
+      POSTGRES_DB: guide_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: gameaibot-local-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata:/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: gameaibot-local-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: gameaibot-local-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9100:9000"
+      - "9101:9001"
+    volumes:
+      - miniodata:/data
+
+volumes:
+  pgdata:
+  redisdata:
+  esdata:
+  miniodata:

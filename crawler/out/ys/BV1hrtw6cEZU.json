@@ -6,9 +6,9 @@
   "description": "-",
   "cover_url": "http://i1.hdslb.com/bfs/archive/99c37025481cbda4b9ca961e258a8f3a57d20c96.jpg",
   "duration": 383,
-  "view_count": 80470,
-  "danmaku_count": 50,
-  "like_count": 2361,
+  "view_count": 101837,
+  "danmaku_count": 77,
+  "like_count": 3018,
   "publish_time": "2026-08-28T19:28:56",
   "up_mid": 547643085,
   "up_name": "MewFurina",
@@ -64,8 +64,8 @@
     }
   ],
   "game_slug": "ys",
-  "game_id": 1,
+  "game_id": 2,
   "game_name": "原神",
   "matched_keyword": "原神 攻略",
-  "crawl_time": "2026-09-05T17:24:38.986442"
+  "crawl_time": "2026-09-07T19:23:23.064880"
 }

@@ -1,0 +1,29 @@
+{
+  "bv_id": "BV1ee411U7Tk",
+  "av_id": 238502928,
+  "url": "https://www.bilibili.com/video/BV1ee411U7Tk",
+  "title": "什么！Mac也能玩英雄联盟！",
+  "description": "-",
+  "cover_url": "http://i2.hdslb.com/bfs/archive/2998aa4aacc95d555649906b18d54bc8872b628d.jpg",
+  "duration": 976,
+  "view_count": 141360,
+  "danmaku_count": 61,
+  "like_count": 280,
+  "publish_time": "2024-01-11T12:58:28",
+  "up_mid": 1044050450,
+  "up_name": "tv九龙",
+  "up_face": "https://i2.hdslb.com/bfs/face/443ccf58adc52d961c49ed8112d1ace13f2c9a92.jpg",
+  "pages": [
+    {
+      "part_index": 1,
+      "cid": 1402435826,
+      "title": "什么！Mac也能玩英雄联盟！",
+      "duration": 976
+    }
+  ],
+  "game_slug": "lol",
+  "game_id": 6,
+  "game_name": "英雄联盟",
+  "matched_keyword": "英雄联盟 攻略",
+  "crawl_time": "2026-09-07T19:17:54.975192"
+}

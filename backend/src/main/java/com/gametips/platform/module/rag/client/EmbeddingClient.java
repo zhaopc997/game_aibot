@@ -31,6 +31,7 @@ public class EmbeddingClient {
 
     private final RagProperties.Embedding cfg;
     private final HttpClient http;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     public EmbeddingClient(RagProperties props) {
         this.cfg = props.getEmbedding();
@@ -56,17 +57,19 @@ public class EmbeddingClient {
             return List.of();
         }
 
-        // OpenAI 兼容请求体
-        StringBuilder body = new StringBuilder(256 + texts.size() * 200);
-        body.append("{\"model\":\"").append(cfg.getModel()).append("\",\"input\":[");
-        for (int i = 0; i < texts.size(); i++) {
-            if (i > 0) body.append(',');
-            body.append('"').append(escape(texts.get(i))).append('"');
+        // OpenAI 兼容请求体（使用 ObjectMapper 保证 JSON 转义安全）
+        String body;
+        try {
+            body = objectMapper.writeValueAsString(Map.of(
+                    "model", cfg.getModel(),
+                    "input", texts
+            ));
+        } catch (Exception e) {
+            throw new BizException(ErrorCodes.INTERNAL_ERROR, "序列化 embedding 请求失败: " + e.getMessage());
         }
-        body.append("]}");
 
         String url = cfg.getBaseUrl().replaceAll("/+$", "") + "/embeddings";
-        String resp = postWithRetry(url, body.toString(), 2);
+        String resp = postWithRetry(url, body, 2);
 
         return parseVectors(resp, texts.size());
     }
@@ -121,8 +124,7 @@ public class EmbeddingClient {
     @SuppressWarnings("unchecked")
     private List<float[]> parseVectors(String resp, int expected) {
         try {
-            Map<String, Object> root = new com.fasterxml.jackson.databind.ObjectMapper()
-                    .readValue(resp, Map.class);
+            Map<String, Object> root = objectMapper.readValue(resp, Map.class);
             List<Map<String, Object>> data = (List<Map<String, Object>>) root.get("data");
             if (data == null || data.isEmpty()) return List.of();
 
@@ -144,9 +146,6 @@ public class EmbeddingClient {
         }
     }
 
-    private String escape(String s) {
-        return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ");
-    }
     private String truncate(String s, int n) {
         return s == null || s.length() <= n ? s : s.substring(0, n) + "…";
     }

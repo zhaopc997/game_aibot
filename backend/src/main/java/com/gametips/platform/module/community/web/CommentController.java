@@ -28,6 +28,8 @@ public class CommentController {
 
     @PostMapping
     public ApiResponse<Comment> create(@RequestBody Comment comment) {
+        comment.setUserId(com.gametips.platform.common.security.CurrentUser.userId());
+        comment.setId(null);
         return ApiResponse.ok(commentService.create(comment));
     }
 }

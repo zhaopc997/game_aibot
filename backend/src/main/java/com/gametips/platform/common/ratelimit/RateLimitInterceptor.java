@@ -23,7 +23,7 @@ import java.time.Duration;
 public class RateLimitInterceptor implements HandlerInterceptor {
 
     private static final Duration DEFAULT_WINDOW = Duration.ofMinutes(1);
-    private static final int DEFAULT_LIMIT = 60;
+    private static final int DEFAULT_LIMIT = 1000;
     private static final int AI_LIMIT = 10;
 
     private final RateLimiter rateLimiter;
@@ -32,8 +32,9 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
         String uri = request.getRequestURI();
-        String resource = uri.startsWith("/api/v1/ai") ? "ai" : "default";
-        int limit = "ai".equals(resource) ? AI_LIMIT : DEFAULT_LIMIT;
+        boolean isAi = uri.startsWith("/api/v1/ai") || uri.startsWith("/api/v1/agent");
+        String resource = isAi ? "ai" : "default";
+        int limit = isAi ? AI_LIMIT : DEFAULT_LIMIT;
 
         String principal = principal(request);
         if (!rateLimiter.allow(resource, principal, DEFAULT_WINDOW, limit)) {
@@ -51,6 +52,13 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         if (auth != null && auth.getPrincipal() instanceof LoginUser loginUser) {
             return "u" + loginUser.userId();
         }
-        return "ip:" + request.getRemoteAddr();
+        String clientIp = request.getHeader("X-Real-IP");
+        if (clientIp == null || clientIp.isBlank()) {
+            clientIp = request.getRemoteAddr();
+        }
+        if (clientIp != null) {
+            clientIp = clientIp.replaceAll("[^a-zA-Z0-9.:%_-]", "");
+        }
+        return "ip:" + (clientIp == null || clientIp.isBlank() ? "unknown" : clientIp);
     }
 }

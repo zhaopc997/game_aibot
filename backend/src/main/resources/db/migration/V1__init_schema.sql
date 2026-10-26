@@ -126,7 +126,7 @@ CREATE TABLE guide (
     version_id    BIGINT           REFERENCES game_version(id),
     title         VARCHAR(255)     NOT NULL,
     author_id     BIGINT           NOT NULL REFERENCES "user"(id),
-    type          VARCHAR(32)      NOT NULL DEFAULT 'MANUAL',   -- MANUAL / AI_GENERATED
+    type          VARCHAR(32)      NOT NULL DEFAULT 'MANUAL',   -- MANUAL(人工原创) / AI_GENERATED(AI 生成) / CRAWLED(外部采集,须保留署名与来源)
     difficulty    VARCHAR(16),                                  -- EASY / NORMAL / HARD / EXPERT
     tags          JSONB            NOT NULL DEFAULT '[]',
     summary       TEXT,

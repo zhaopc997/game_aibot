@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "honkai-star-rail-db": "^1.11.0",
+    "starrail-sdk": "^2.4.1"
+  }
+}

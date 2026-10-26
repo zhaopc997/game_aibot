@@ -39,16 +39,25 @@ public class EsGuideSearchClient implements GuideSearchClient {
                             .from((int) pageable.getOffset())
                             .size(pageable.getPageSize())
                             .query(q -> q.bool(b -> {
-                                b.must(m -> m.multiMatch(mm -> mm
-                                        .query(keyword == null ? "" : keyword)
-                                        .fields("title^3", "summary")));
+                                if (keyword != null && !keyword.isBlank()) {
+                                    b.must(m -> m.multiMatch(mm -> mm
+                                            .query(keyword)
+                                            .fields("title^3", "summary")));
+                                } else {
+                                    b.must(m -> m.matchAll(ma -> ma));
+                                }
                                 if (tag != null && !tag.isBlank()) {
-                                    b.filter(f -> f.term(t -> t.field("tags").value(tag)));
+                                    // 用 .keyword 子字段做精确匹配：
+                                    // status/tags 在索引中是 text 类型（会被小写化），
+                                    // 而 term 查询不做归一化，直接查大写枚举值必然 0 命中。
+                                    b.filter(f -> f.term(t -> t.field("tags.keyword").value(tag)));
                                 }
                                 if (gameId != null) {
                                     b.filter(f -> f.term(t -> t.field("gameId").value(gameId)));
                                 }
-                                b.filter(f -> f.term(t -> t.field("status").value(GuideStatus.PUBLISHED.name())));
+                                b.filter(f -> f.term(t -> t
+                                        .field("status.keyword")
+                                        .value(GuideStatus.PUBLISHED.name())));
                                 return b;
                             })),
                     GuideDocument.class);
@@ -57,8 +66,15 @@ public class EsGuideSearchClient implements GuideSearchClient {
                     .map(Hit::source)
                     .map(GuideDocument::getId)
                     .toList();
-            List<Guide> guides = guideRepository.findAllById(ids);
-            return new PageImpl<>(guides, pageable, response.hits().total() == null ? 0 : response.hits().total().value());
+            // 用 findAllById 回表取完整实体；注意其返回顺序与入参不一致，
+            // 这里按 ES 的相关性得分顺序重排，避免搜索结果乱序。
+            List<Guide> found = guideRepository.findAllById(ids);
+            List<Guide> guides = ids.stream()
+                    .map(id -> found.stream().filter(g -> id.equals(g.getId())).findFirst().orElse(null))
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+            return new PageImpl<>(guides, pageable,
+                    response.hits().total() == null ? 0 : response.hits().total().value());
         } catch (Exception e) {
             log.error("es search failed, fallback to empty", e);
             return new PageImpl<>(List.of(), pageable, 0);

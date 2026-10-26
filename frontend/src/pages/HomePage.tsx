@@ -1,58 +1,117 @@
 import { Link } from 'react-router-dom'
 import { Search, Sparkles, Flame, TrendingUp, ArrowRight, Star } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { HoverCard } from '@/components/ui/Card'
 import { Tag } from '@/components/ui/Tag'
+import { GameCover } from '@/components/GameCover'
+import client, { unwrap } from '@/api/client'
 
-/* ───── mock 数据(后端就绪后换成 API) ───── */
-const HOT_GAMES = [
-  { id: 1, name: '原神',         cover: '🎮', players: '2.3M', tag: '开放世界' },
-  { id: 2, name: '崩坏：星穹铁道', cover: '🚂', players: '1.5M', tag: '回合制' },
-  { id: 3, name: '黑神话：悟空',   cover: '🐵', players: '1.1M', tag: 'ARPG' },
-  { id: 4, name: '王者荣耀',       cover: '⚔️', players: '5.0M', tag: 'MOBA' },
-  { id: 5, name: '塞尔达传说',     cover: '🗡️', players: '850K', tag: '动作' },
-  { id: 6, name: '艾尔登法环',     cover: '💍', players: '720K', tag: '魂类' },
+interface Game {
+  id: number
+  name: string
+  coverUrl?: string | null
+  category?: string
+  currentVersion?: string
+}
+
+interface Guide {
+  id: number
+  title: string
+  summary?: string
+  tags: string[]
+  difficulty?: string
+  likeCount: number
+  usefulCount: number
+  updatedAt: string
+}
+
+interface PageResult<T> { items: T[]; nextCursor?: string | null }
+
+const FALLBACK_HOT_GAMES: Game[] = [
+  { id: 2, name: '原神', category: '开放世界', currentVersion: '5.0' },
+  { id: 8, name: '崩坏：星穹铁道', category: '回合制 RPG', currentVersion: '2.7' },
+  { id: 4, name: '黑神话：悟空', category: 'ARPG', currentVersion: '1.0' },
+  { id: 6, name: '英雄联盟', category: 'MOBA', currentVersion: '14.19' },
+  { id: 3, name: '塞尔达传说：王国之泪', category: '动作冒险', currentVersion: '1.2' },
+  { id: 1, name: '艾尔登法环', category: '魂系 RPG', currentVersion: '1.10' },
 ]
 
-const FEATURED = [
+const FALLBACK_FEATURED: Guide[] = [
   {
-    id: 101,
+    id: 1,
     title: '4.2 钟离圣遗物毕业指南：从入门到精通',
-    game: '原神',
-    summary: '钟离在 4.2 版本依旧是顶级辅助,本文从圣遗物选择、词条优先级到配队,系统讲解钟离的培养路线...',
-    cover: '🏔️',
-    likes: 234, comments: 18, tag: '配装',
+    summary: '钟离在 4.2 版本依旧是顶级辅助，本文从圣遗物选择、词条优先级到配队，系统讲解钟离的培养路线与深渊实战细节。',
+    tags: ['配装', '原神', '辅助'],
+    difficulty: 'NORMAL',
+    likeCount: 512,
+    usefulCount: 468,
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: 102,
-    title: '黑神话：悟空全 Boss 打法合集',
-    game: '黑神话：悟空',
-    summary: '汇总 86 个 Boss 的招式拆解、克制策略与硬直窗口,配 4K 视频演示,看完就能上手...',
-    cover: '🐉',
-    likes: 412, comments: 56, tag: 'Boss',
+    id: 2,
+    title: '黑神话：悟空全 Boss 打法与禁字决高爆发构筑',
+    summary: '汇总核心首领的招式拆解、克制策略与硬直窗口，搭配重击蓄力与高暴击仙丹分配，助你畅快通关。',
+    tags: ['Boss', '黑神话', 'Build'],
+    difficulty: 'HARD',
+    likeCount: 680,
+    usefulCount: 590,
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: 103,
-    title: '星穹铁道：3.0 新角色抽取优先级',
-    game: '崩坏：星穹铁道',
-    summary: '新版本三位新角色,谁最值得抽?本文从队伍适配、光锥、性价比三个维度分析...',
-    cover: '✨',
-    likes: 189, comments: 32, tag: '抽卡',
+    id: 3,
+    title: '星穹铁道：新版本角色抽取与遗器养成优先级',
+    summary: '新版本角色配队思路详解，针对主C、辅助不同定位的遗器主副词条推荐，平民零氪必看攻略。',
+    tags: ['抽卡', '星穹铁道', '攻略'],
+    difficulty: 'EASY',
+    likeCount: 410,
+    usefulCount: 375,
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: 104,
-    title: '王者荣耀：S37 赛季上分英雄榜',
-    game: '王者荣耀',
-    summary: '基于 10 万场对局数据,盘点新赛季最强上分英雄与禁用技巧...',
-    cover: '🛡️',
-    likes: 156, comments: 24, tag: '上分',
+    id: 4,
+    title: '艾尔登法环：新手开荒职业推荐与前期神兵获取',
+    summary: '面向刚入坑玩家的无痛开荒指南，开局加点推荐、关键道具与漂流墓地神兵获取路线完整整理。',
+    tags: ['开荒', '艾尔登法环', '新手'],
+    difficulty: 'EASY',
+    likeCount: 320,
+    usefulCount: 280,
+    updatedAt: new Date().toISOString(),
   },
 ]
 
-/* ───── 页面 ───── */
 export default function HomePage() {
   const navigate = useNavigate()
+  const [hotGames, setHotGames] = useState<Game[]>(FALLBACK_HOT_GAMES)
+  const [featured, setFeatured] = useState<Guide[]>(FALLBACK_FEATURED)
+
+  useEffect(() => {
+    // 独立获取热门游戏（即便精选攻略接口暂无数据或异常，也不影响热门游戏展示）
+    client.get('/games')
+      .then((g) => {
+        const games = unwrap<Game[]>(g)
+        if (Array.isArray(games) && games.length > 0) {
+          setHotGames(games.slice(0, 6))
+        }
+      })
+      .catch((err) => {
+        console.warn('[HomePage] 热门游戏加载异常，已启用内置精选列表:', err)
+      })
+
+    // 独立获取精选攻略
+    client.get('/guides?status=PUBLISHED&size=6')
+      .then((gl) => {
+        const res = unwrap<PageResult<Guide>>(gl)
+        if (res?.items && Array.isArray(res.items) && res.items.length > 0) {
+          setFeatured(res.items)
+        }
+      })
+      .catch((err) => {
+        console.warn('[HomePage] 本周精选攻略加载异常，已启用内置精选列表:', err)
+      })
+  }, [])
+
   return (
     <div className="space-y-16 pb-20">
       {/* HERO */}
@@ -131,22 +190,24 @@ export default function HomePage() {
 
         <div className="-mx-4 px-4 overflow-x-auto scrollbar-thin">
           <div className="flex gap-4 pb-2">
-            {HOT_GAMES.map((g) => (
+            {hotGames.map((g) => (
               <Link
                 key={g.id}
                 to={`/games/${g.id}`}
                 className="group shrink-0 w-44"
               >
-                <div className="aspect-[3/4] rounded-3xl bg-gradient-to-br from-accent-100 to-canvas border border-ink-100/40 grid place-items-center text-6xl shadow-soft transition-all duration-300 group-hover:shadow-lift group-hover:-translate-y-1">
-                  {g.cover}
+                <div className="aspect-[3/4] rounded-3xl bg-gradient-to-br from-accent-100 to-canvas border border-ink-100/40 grid place-items-center overflow-hidden shadow-soft transition-all duration-300 group-hover:shadow-lift group-hover:-translate-y-1">
+                  <GameCover
+                    src={g.coverUrl}
+                    gameId={g.id}
+                    alt={g.name}
+                    className="h-full w-full"
+                    emojiClassName="text-6xl select-none"
+                  />
                 </div>
                 <div className="mt-3 px-1">
                   <div className="text-sm font-medium text-ink-900 truncate">{g.name}</div>
-                  <div className="mt-0.5 text-xs text-ink-500 flex items-center gap-1.5">
-                    <span>{g.players} 玩家</span>
-                    <span className="text-ink-100">·</span>
-                    <span className="text-accent-700">{g.tag}</span>
-                  </div>
+                  {g.category && <div className="mt-0.5 text-xs text-ink-500">{g.category}</div>}
                 </div>
               </Link>
             ))}
@@ -166,31 +227,29 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {FEATURED.map((it) => (
+          {featured.map((it) => (
             <Link key={it.id} to={`/guides/${it.id}`}>
               <HoverCard className="overflow-hidden">
                 <div className="grid grid-cols-[120px_1fr] gap-5 p-5">
-                  {/* 缩略图 */}
                   <div className="aspect-[3/4] rounded-2xl bg-gradient-to-br from-accent-100 to-canvas grid place-items-center text-5xl">
-                    {it.cover}
+                    📖
                   </div>
-                  {/* 文字 */}
                   <div className="flex flex-col py-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Tag size="sm">{it.tag}</Tag>
-                      <span className="text-xs text-ink-500">{it.game}</span>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {it.tags?.slice(0, 2).map((t) => <Tag key={t} size="sm">{t}</Tag>)}
+                      {it.difficulty && <span className="text-xs text-ink-500">{it.difficulty}</span>}
                     </div>
                     <h3 className="text-base font-display font-semibold text-ink-900 leading-snug line-clamp-2 group-hover:text-accent-700">
                       {it.title}
                     </h3>
-                    <p className="mt-2 text-sm text-ink-500 line-clamp-2 flex-1">
-                      {it.summary}
-                    </p>
+                    {it.summary && <p className="mt-2 text-sm text-ink-500 line-clamp-2 flex-1">{it.summary}</p>}
                     <div className="mt-3 flex items-center gap-4 text-xs text-ink-500">
                       <span className="inline-flex items-center gap-1">
-                        <Star size={12} className="text-accent-500 fill-accent-500" /> {it.likes}
+                        <Star size={12} className="text-accent-500 fill-accent-500" /> {it.likeCount}
                       </span>
-                      <span>💬 {it.comments}</span>
+                      <span className="inline-flex items-center gap-1">
+                        👍 {it.usefulCount}
+                      </span>
                     </div>
                   </div>
                 </div>

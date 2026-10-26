@@ -57,6 +57,11 @@ public class CommunityController {
         return ApiResponse.ok(communityService.questions(gameId));
     }
 
+    @GetMapping("/questions/{questionId}")
+    public ApiResponse<Question> question(@PathVariable Long questionId) {
+        return ApiResponse.ok(communityService.getQuestion(questionId));
+    }
+
     @PostMapping("/questions")
     public ApiResponse<Question> createQuestion(@RequestBody Question q) {
         q.setUserId(CurrentUser.userId());

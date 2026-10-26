@@ -1,0 +1,166 @@
+# ═══════════════════════════════════════════════════════════════
+# 生产环境配置（profile: prod）
+#
+# 启用方式：
+#   java -jar app.jar --spring.profiles.active=prod
+#   或 export SPRING_PROFILES_ACTIVE=prod
+#
+# 设计原则：所有敏感项**无默认值** —— 未注入环境变量时启动即失败。
+# 这是刻意的：宁可启动失败，也不能带着默认密钥上线。
+# ═══════════════════════════════════════════════════════════════
+
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: native
+  # 生产收敛错误详情，避免泄露堆栈与内部路径
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never
+  tomcat:
+    server-info:
+      enabled: false          # 隐藏 Tomcat 版本 banner
+  shutdown: graceful
+
+spring:
+  application:
+    name: guide-platform
+  main:
+    banner-mode: off
+
+  datasource:
+    url: ${DB_URL}                        # 无默认值，强制注入
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: 5
+      connection-timeout: 10000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+  elasticsearch:
+    uris: ${ES_URIS}
+    username: ${ES_USERNAME:}
+    password: ${ES_PASSWORD:}
+    socket-timeout: 30s
+    connection-timeout: 5s
+
+  servlet:
+    multipart:
+      # 显式限制上传大小：默认 1MB 过小，且需防磁盘被恶意打满
+      max-file-size: ${MAX_UPLOAD_SIZE:10MB}
+      max-request-size: ${MAX_UPLOAD_REQUEST:12MB}
+
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false        # 生产禁止输出 SQL
+        show_sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+app:
+  seed:
+    # DataSeeder 带 @ConditionalOnProperty，这里双保险：生产绝不写演示数据
+    enabled: false
+
+  cors:
+    # 同域部署（Nginx 托管前端 + 反代 /api）时保持为空即可，无需 CORS。
+    # 仅当前后端分域名部署时才填，例如：
+    #   CORS_ALLOWED_ORIGINS=https://app.example.com
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
+    # 前端用 Authorization 头而非 Cookie，故默认不启用凭证
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
+
+  jwt:
+    # 生产必须注入强随机密钥（≥32 字节），无默认值 → 未注入则启动失败
+    secret: ${JWT_SECRET}
+    access-token-ttl: ${JWT_ACCESS_TTL:30m}
+    refresh-token-ttl: ${JWT_REFRESH_TTL:7d}
+
+  upload:
+    local-dir: ${UPLOAD_DIR:/data/uploads}
+
+  ai:
+    provider: openai
+    openai:
+      base-url: ${OPENAI_BASE_URL:https://api.siliconflow.cn/v1}
+      api-key: ${OPENAI_API_KEY}                # 无默认值
+      model: ${OPENAI_MODEL:deepseek-ai/DeepSeek-V3}
+      temperature: 0.7
+      timeout-seconds: 60
+      max-tokens: 1500
+
+  oauth:
+    # 生产禁止 mock 登录（否则任何人可用任意邮箱登录）
+    mock: false
+    redirect-url: ${OAUTH_REDIRECT_URL}
+    providers: {}
+
+  search:
+    provider: elasticsearch
+    elasticsearch:
+      uris: ${ES_URIS}
+
+  rag:
+    use-bm25: true
+    use-knn: ${RAG_USE_KNN:false}     # 无 embedding key 时保持关闭
+    top-k: 5
+    index-name: guide_chunks
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.gametips.platform: ${LOG_LEVEL_APP:INFO}
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN           # 生产严禁打印 SQL 与参数
+  file:
+    name: ${LOG_FILE:/data/logs/app.log}
+
+# ───── 健康检查与指标 ─────
+# 仅暴露必要端点，避免 /actuator/env、/heapdump 等泄露敏感信息
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_EXPOSE:health,info,metrics}
+  endpoint:
+    health:
+      probes:
+        enabled: true   # 开启 /actuator/health/liveness 与 /readiness（K8s 探针）
+      show-details: never   # 不对外暴露各依赖的细节
+      group:
+        # 存活探针：只关心进程本身
+        liveness:
+          include: livenessState
+        # 就绪探针：依赖就绪才算可用
+        readiness:
+          include: readinessState, db, redis
+  health:
+    diskspace:
+      enabled: true
+      threshold: 2GB
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+info:
+  env:
+    enabled: false

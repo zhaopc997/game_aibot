@@ -6,12 +6,16 @@ import com.gametips.platform.module.ai.domain.AiParseTask;
 import com.gametips.platform.module.ai.domain.AiTaskStatus;
 import com.gametips.platform.module.ai.repository.AiParseTaskRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 
 /**
  * AI 聚合解析任务：以 source_hash 保证幂等（数据库唯一约束兜底）。
@@ -20,12 +24,24 @@ import java.util.HexFormat;
  * 注意：submit 不置于事务内，避免与 @Async 处理器形成同步事务嵌套，
  * 由 processor 内部逐步自管理事务。
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiParseService {
 
     private final AiParseTaskRepository taskRepository;
     private final AiParseProcessor processor;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void recoverStaleTasks() {
+        List<AiParseTask> staleTasks = taskRepository.findByStatus(AiTaskStatus.PROCESSING);
+        if (!staleTasks.isEmpty()) {
+            log.info("[ai-parse] found {} stale tasks in PROCESSING status on startup, re-triggering...", staleTasks.size());
+            for (AiParseTask t : staleTasks) {
+                processor.process(t.getId());
+            }
+        }
+    }
 
     public AiParseTask submit(String sourceType, String sourceUrl) {
         String hash = sha256(sourceUrl == null ? sourceType + System.nanoTime() : sourceUrl);

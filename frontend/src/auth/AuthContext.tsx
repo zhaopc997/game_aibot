@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import client, { unwrap, TOKEN_KEY, REFRESH_KEY } from '../api/client'
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react'
+import client, { unwrap, TOKEN_KEY, REFRESH_KEY, SESSION_EXPIRED_EVENT } from '../api/client'
 
 interface User {
   id: number
@@ -12,7 +12,8 @@ interface User {
   roles: string[]
 }
 
-interface LoginResponse {
+/** 登录/注册/OAuth 三种入口共用的会话响应体。 */
+export interface LoginResponse {
   accessToken: string
   refreshToken: string
   expiresIn: number
@@ -24,7 +25,8 @@ interface AuthContextValue {
   user: User | null
   login: (username: string, password: string) => Promise<void>
   register: (username: string, email: string, password: string) => Promise<void>
-  oauthMock: (provider: string) => Promise<void>
+  /** 直接接管后端下发的 token+user（OAuth 回调用），不经过登录接口。 */
+  adoptSession: (resp: LoginResponse) => void
   logout: () => void
 }
 
@@ -34,20 +36,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY))
   const [user, setUser] = useState<User | null>(null)
 
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(REFRESH_KEY)
+    setToken(null)
+    setUser(null)
+  }, [])
+
+  // token 变化后拉取当前用户；失败视为凭证失效，登出避免"假登录态"
   useEffect(() => {
-    if (token) {
-      client.get('/users/me')
-        .then((resp) => setUser(unwrap<User>(resp)))
-        .catch(() => logout())
+    if (!token) {
+      setUser(null)
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+    let cancelled = false
+    client
+      .get('/users/me')
+      .then((resp) => {
+        if (!cancelled) setUser(unwrap<User>(resp))
+      })
+      .catch(() => {
+        if (!cancelled) logout()
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, logout])
+
+  // axios 层 refresh 失败时广播 SESSION_EXPIRED_EVENT，此处同步登出，
+  // 否则 localStorage 已清空但 token state 仍是旧值，路由守卫会误判为已登录
+  useEffect(() => {
+    window.addEventListener(SESSION_EXPIRED_EVENT, logout)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, logout)
+  }, [logout])
 
   function persist(resp: LoginResponse) {
     localStorage.setItem(TOKEN_KEY, resp.accessToken)
     localStorage.setItem(REFRESH_KEY, resp.refreshToken)
     setToken(resp.accessToken)
     setUser(resp.user)
+  }
+
+  /** OAuth 回调等场景：后端已直接下发 token 与用户，无需再走登录接口。 */
+  function adoptSession(resp: LoginResponse) {
+    persist(resp)
   }
 
   async function login(username: string, password: string) {
@@ -60,20 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist(unwrap<LoginResponse>(resp))
   }
 
-  async function oauthMock(provider: string) {
-    const resp = await client.post(`/auth/oauth/mock?provider=${provider}&code=demo-${Date.now()}`)
-    persist(unwrap<LoginResponse>(resp))
-  }
-
-  function logout() {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(REFRESH_KEY)
-    setToken(null)
-    setUser(null)
-  }
-
   return (
-    <AuthContext.Provider value={{ token, user, login, register, oauthMock, logout }}>
+    <AuthContext.Provider value={{ token, user, login, register, adoptSession, logout }}>
       {children}
     </AuthContext.Provider>
   )

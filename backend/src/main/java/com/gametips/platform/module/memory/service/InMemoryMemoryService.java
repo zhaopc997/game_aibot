@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * 生产实现需要替换为 Redis-backed 版本。
  */
 @Slf4j
-@Service
 public class InMemoryMemoryService implements MemoryService, PreferenceService {
 
     /** 滑动窗口大小;真实场景从配置注入 */
@@ -35,15 +34,17 @@ public class InMemoryMemoryService implements MemoryService, PreferenceService {
     // ─── 短期记忆 ──────────────────────────────────────
 
     @Override
-    public synchronized List<ConversationMessage> shortTerm(UUID conversationId, ConversationMessage message) {
+    public List<ConversationMessage> shortTerm(UUID conversationId, ConversationMessage message) {
         List<ConversationMessage> list = shortStore.computeIfAbsent(conversationId, k -> new ArrayList<>());
-        list.add(message);
-        // 滑动窗口:只保留最近 SHORT_WINDOW 条
-        while (list.size() > SHORT_WINDOW) {
-            list.remove(0);
+        synchronized (list) {
+            list.add(message);
+            // 滑动窗口:只保留最近 SHORT_WINDOW 条
+            while (list.size() > SHORT_WINDOW) {
+                list.remove(0);
+            }
+            log.debug("[memory] shortTerm conv={} size={}", conversationId, list.size());
+            return new ArrayList<>(list);
         }
-        log.debug("[memory] shortTerm conv={} size={}", conversationId, list.size());
-        return new ArrayList<>(list);
     }
 
     @Override
@@ -56,8 +57,13 @@ public class InMemoryMemoryService implements MemoryService, PreferenceService {
     }
 
     @Override
-    public synchronized void clearShort(UUID conversationId) {
-        shortStore.remove(conversationId);
+    public void clearShort(UUID conversationId) {
+        List<ConversationMessage> list = shortStore.remove(conversationId);
+        if (list != null) {
+            synchronized (list) {
+                list.clear();
+            }
+        }
         log.info("[memory] clearShort conv={}", conversationId);
     }
 

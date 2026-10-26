@@ -27,8 +27,14 @@ public class AgentController {
 
     @PostMapping("/chat")
     public ApiResponse<ChatResponse> chat(@Valid @RequestBody ChatRequest req) {
-        // 骨架阶段:未登录也允许,userId 传 0(真实阶段强制 @PreAuthorize 拦截)
+        // 未登录也允许，userId 传 0
         Long userId = CurrentUser.userIdOrZero();
         return ApiResponse.ok(agentService.chat(userId, req));
+    }
+
+    @PostMapping(value = "/chat/stream", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter chatStream(@Valid @RequestBody ChatRequest req) {
+        Long userId = CurrentUser.userIdOrZero();
+        return agentService.chatStream(userId, req);
     }
 }

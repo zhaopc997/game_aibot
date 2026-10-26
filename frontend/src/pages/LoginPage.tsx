@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Gamepad2 } from 'lucide-react'
@@ -19,8 +20,8 @@ export default function LoginPage() {
     try {
       await login(form.username, form.password)
       navigate('/')
-    } catch (e: any) {
-      setErr(e?.response?.data?.message ?? e?.message ?? '登录失败')
+    } catch (e: unknown) {
+      setErr(errorMessage(e, '登录失败'))
     } finally {
       setLoading(false)
     }

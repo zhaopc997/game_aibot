@@ -1,0 +1,52 @@
+# ═══════════════════════════════════════════════════════════════
+# HTTPS 叠加编排（在 docker-compose.prod.yml 之上追加 Caddy）
+#
+# 用法：
+#   # .env.production 中补充：
+#   #   SITE_DOMAIN=your-domain.com
+#   #   ACME_EMAIL=you@example.com
+#   #   HTTP_PORT=127.0.0.1:8088     ← 关键：明文端口只绑本机，不对外
+#   docker compose -p gameaibot \
+#     -f docker-compose.prod.yml -f docker-compose.tls.yml \
+#     --env-file .env.production up -d
+#
+# 为什么把 HTTP_PORT 设为 127.0.0.1:8088：
+#   compose 的 ports 是**追加**语义，无法在此文件里移除 prod.yml 已声明的映射。
+#   与其依赖 !reset（各版本支持不一致），不如让明文端口只绑定回环地址 ——
+#   公网访问只能走 Caddy 的 443，效果等同且更稳。
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: game-prod-caddy
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_healthy
+    ports:
+      - "80:80"     # ACME HTTP-01 质询 + HTTP→HTTPS 跳转
+      - "443:443"   # HTTPS
+      - "443:443/udp"  # HTTP/3
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - prod-caddydata:/data        # 证书与 ACME 账号（必须持久化，否则每次重启重签）
+      - prod-caddyconfig:/config
+    networks: [prodx]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  prod-caddydata:
+  prod-caddyconfig:

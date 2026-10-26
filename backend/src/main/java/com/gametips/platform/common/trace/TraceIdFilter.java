@@ -29,9 +29,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         // 优先使用上游传入的 traceId,便于跨服务调用串联
         String incoming = request.getHeader(HEADER);
-        String traceId = (incoming != null && !incoming.isBlank())
-                ? incoming
-                : TraceContext.init();
+        String traceId = TraceContext.init(incoming);
         try {
             response.setHeader(HEADER, traceId);
             chain.doFilter(request, response);

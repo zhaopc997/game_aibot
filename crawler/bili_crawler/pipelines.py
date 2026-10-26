@@ -25,8 +25,7 @@ class FilterPipeline:
         r'搞笑|段子|广告|推广|打赏|签约|'
         r'cosplay|cos\s|漫展|联名|'
         r'主播|签约|恭喜|中奖|'
-        r'声优|主题曲|OP\s|ED\s|'
-        r'路线|速刷|速通'  # B 站热门的"X 分钟路线"通常内容稀薄
+        r'声优|主题曲|OP\s|ED\s'
     )
 
     MIN_VIEW_COUNT = 10_000

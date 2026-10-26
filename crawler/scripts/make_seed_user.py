@@ -17,7 +17,7 @@ load_dotenv(ROOT / 'crawler' / '.env')
 
 PG = dict(
     host=os.getenv('PG_HOST', 'localhost'),
-    port=int(os.getenv('PG_PORT', 5433)),
+    port=int(os.getenv('PG_PORT', 5432)),
     dbname=os.getenv('PG_DB', 'guide_platform'),
     user=os.getenv('PG_USER', 'postgres'),
     password=os.getenv('PG_PASSWORD', 'postgres'),
@@ -40,6 +40,10 @@ VALUES (1, 'USER', now())
 ON CONFLICT (user_id, role) DO NOTHING;
 """
 
+SYNC_SEQUENCE = """
+SELECT setval('user_id_seq', coalesce((SELECT max(id) FROM "user"), 1));
+"""
+
 
 def main():
     print(f"→ 连接数据库 {PG['host']}:{PG['port']}/{PG['dbname']}")
@@ -54,8 +58,9 @@ def main():
             with conn.cursor() as cur:
                 cur.execute(UPSERT_USER)
                 cur.execute(UPSERT_ROLE)
+                cur.execute(SYNC_SEQUENCE)
             conn.commit()
-            print("✅ 采集者用户已确保存在 (id=1, username=crawler_bot, role=USER)")
+            print("✅ 采集者用户已确保存在 (id=1, username=crawler_bot, role=USER), 自增序列已同步")
     except Exception as e:
         print(f"❌ 失败: {e}", file=sys.stderr)
         sys.exit(1)

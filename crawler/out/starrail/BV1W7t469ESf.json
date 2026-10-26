@@ -1,0 +1,59 @@
+{
+  "bv_id": "BV1W7t469ESf",
+  "av_id": 117187444605662,
+  "url": "https://www.bilibili.com/video/BV1W7t469ESf",
+  "title": "【星穹铁道】4.5末日幻影 星启模式 摆完挂机，各队伍3~8金配置分享，含知更鸟·晴歌新角色，贪饕机制入侵！",
+  "description": "详细作业，稍等片刻，视频前言是推荐阵容的配置展示",
+  "cover_url": "http://i2.hdslb.com/bfs/archive/54577770591761fe539922c7e0510ff758f2cc5d.jpg",
+  "duration": 1847,
+  "view_count": 59421,
+  "danmaku_count": 113,
+  "like_count": 729,
+  "publish_time": "2026-08-31T09:14:26",
+  "up_mid": 23618219,
+  "up_name": "问肯局长是不是基",
+  "up_face": "https://i2.hdslb.com/bfs/face/5f9ef59e680df9ec60a61d0d2c3ef871b3f1122a.jpg",
+  "pages": [
+    {
+      "part_index": 1,
+      "cid": 41445952202,
+      "title": "视频前言",
+      "duration": 158
+    },
+    {
+      "part_index": 2,
+      "cid": 41446606450,
+      "title": "关卡1 3500分 姬子启行0+1   3金",
+      "duration": 431
+    },
+    {
+      "part_index": 3,
+      "cid": 41447721567,
+      "title": "关卡2 3400分 牢闪0+1  5金",
+      "duration": 215
+    },
+    {
+      "part_index": 4,
+      "cid": 41447985014,
+      "title": "关卡2 3400分 不死途0+1  5金",
+      "duration": 328
+    },
+    {
+      "part_index": 5,
+      "cid": 41447719463,
+      "title": "关卡2 3400分 遐蝶0+1 8金",
+      "duration": 372
+    },
+    {
+      "part_index": 6,
+      "cid": 41447784751,
+      "title": "关卡3 3400分 欢愉火花0+1 5金",
+      "duration": 343
+    }
+  ],
+  "game_slug": "starrail",
+  "game_id": 8,
+  "game_name": "崩坏：星穹铁道",
+  "matched_keyword": "崩坏星穹铁道 攻略",
+  "crawl_time": "2026-09-07T19:18:31.854079"
+}

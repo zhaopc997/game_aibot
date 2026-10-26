@@ -8,13 +8,18 @@ import com.gametips.platform.module.content.repository.GuideRepository;
 import com.gametips.platform.module.review.domain.ContentReview;
 import com.gametips.platform.module.review.domain.ReviewStatus;
 import com.gametips.platform.module.review.domain.RiskLevel;
+import com.gametips.platform.module.review.dto.ReviewQueueItem;
+import com.gametips.platform.module.review.event.GuideReviewFinishedEvent;
 import com.gametips.platform.module.review.repository.ContentReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -34,6 +39,7 @@ public class ContentReviewService {
 
     private final ContentReviewRepository reviewRepository;
     private final GuideRepository guideRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 提交内容审核。目标状态为 PENDING_REVIEW 的内容被审核。
@@ -50,7 +56,7 @@ public class ContentReviewService {
         } else {
             review.setStatus(ReviewStatus.PASSED);
             review.setReviewedAt(Instant.now());
-            applyResult(targetType, targetId, true);
+            applyResult(targetType, targetId, true, "机器初审自动通过");
         }
         return reviewRepository.save(review);
     }
@@ -68,8 +74,42 @@ public class ContentReviewService {
         return RiskLevel.LOW;
     }
 
-    public List<ContentReview> humanQueue() {
-        return reviewRepository.findTop100ByStatusOrderByCreatedAtAsc(ReviewStatus.NEED_HUMAN);
+    /**
+     * 统一待审核队列：合并 content_review 待人工审核项 + guide 表中 DRAFT/PENDING_REVIEW
+     * 但尚未生成审核记录的攻略（如爬虫直接入库、AI 草稿等）。
+     */
+    public List<ReviewQueueItem> pendingQueue() {
+        List<ReviewQueueItem> items = new ArrayList<>();
+
+        List<ContentReview> reviews = reviewRepository.findTop100ByStatusInOrderByCreatedAtAsc(
+                List.of(ReviewStatus.NEED_HUMAN, ReviewStatus.PENDING));
+        for (ContentReview r : reviews) {
+            items.add(new ReviewQueueItem(
+                    r.getId(), r.getTargetType(), r.getTargetId(),
+                    null, r.getStatus().name(), r.getRiskLevel().name(),
+                    r.getReason(), r.getCreatedAt() == null ? null : r.getCreatedAt().toString(),
+                    r.getCreatedAt()));
+        }
+
+        // 已生成过审核记录（任意状态）的 guide 不再重复加入待审攻略列表
+        Set<Long> queuedGuideIds = new HashSet<>();
+        for (ContentReview r : reviewRepository.findTop500ByTargetTypeOrderByIdAsc("guide")) {
+            queuedGuideIds.add(r.getTargetId());
+        }
+
+        for (Guide g : guideRepository.findTop100ByStatusInOrderByUpdatedAtDesc(
+                List.of(GuideStatus.DRAFT, GuideStatus.PENDING_REVIEW))) {
+            if (queuedGuideIds.contains(g.getId())) {
+                continue;
+            }
+            items.add(new ReviewQueueItem(
+                    null, "guide", g.getId(),
+                    g.getTitle(), g.getStatus().name(), "LOW",
+                    null, g.getCreatedAt() == null ? null : g.getCreatedAt().toString(),
+                    g.getCreatedAt()));
+        }
+
+        return items;
     }
 
     @Transactional
@@ -83,15 +123,41 @@ public class ContentReviewService {
         review.setReviewerId(reviewerId);
         review.setReason(reason);
         review.setReviewedAt(Instant.now());
-        applyResult(review.getTargetType(), review.getTargetId(), decision == ReviewStatus.PASSED);
+        applyResult(review.getTargetType(), review.getTargetId(), decision == ReviewStatus.PASSED, reason);
         return reviewRepository.save(review);
+    }
+
+    /**
+     * 审核一个尚无 content_review 记录的待审攻略（爬虫/AI 直接入库的 DRAFT）。
+     * 通过 → PUBLISHED；拒绝 → REJECTED，并补记一条审核记录。
+     */
+    @Transactional
+    public void reviewGuideDirectly(Long guideId, ReviewStatus decision, Long reviewerId, String reason) {
+        Guide guide = guideRepository.findById(guideId)
+                .orElseThrow(() -> new BizException(ErrorCodes.NOT_FOUND, "攻略不存在"));
+        boolean passed = (decision == ReviewStatus.PASSED);
+        guide.setStatus(passed ? GuideStatus.PUBLISHED : GuideStatus.REJECTED);
+        guide = guideRepository.save(guide);
+
+        ContentReview review = new ContentReview();
+        review.setTargetType("guide");
+        review.setTargetId(guideId);
+        review.setReviewerId(reviewerId);
+        review.setStatus(decision);
+        review.setRiskLevel(RiskLevel.LOW);
+        review.setReason(reason);
+        review.setReviewedAt(Instant.now());
+        reviewRepository.save(review);
+
+        eventPublisher.publishEvent(new GuideReviewFinishedEvent(
+                guide.getId(), guide.getTitle(), guide.getAuthorId(), passed, reason));
     }
 
     /**
      * 审核结果应用到目标（MVP 仅支持 guide）：
      * 通过 → PUBLISHED；拒绝 → REJECTED。
      */
-    private void applyResult(String targetType, Long targetId, boolean passed) {
+    private void applyResult(String targetType, Long targetId, boolean passed, String reason) {
         if (!"guide".equals(targetType)) {
             log.warn("unsupported review target type: {}", targetType);
             return;
@@ -102,6 +168,9 @@ public class ContentReviewService {
             return;
         }
         guide.setStatus(passed ? GuideStatus.PUBLISHED : GuideStatus.REJECTED);
-        guideRepository.save(guide);
+        guide = guideRepository.save(guide);
+
+        eventPublisher.publishEvent(new GuideReviewFinishedEvent(
+                guide.getId(), guide.getTitle(), guide.getAuthorId(), passed, reason));
     }
 }

@@ -4,6 +4,7 @@ import com.gametips.platform.common.api.ApiResponse;
 import com.gametips.platform.common.security.CurrentUser;
 import com.gametips.platform.module.review.domain.ContentReview;
 import com.gametips.platform.module.review.domain.ReviewStatus;
+import com.gametips.platform.module.review.dto.ReviewQueueItem;
 import com.gametips.platform.module.review.service.ContentReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,17 +36,35 @@ public class ReviewController {
         return ApiResponse.ok(reviewService.submit(targetType, targetId, text));
     }
 
+    /**
+     * 统一待审核队列：content_review 待审 + 未生成审核记录的 DRAFT/PENDING_REVIEW 攻略。
+     */
     @PreAuthorize("hasAnyRole('MODERATOR','ADMIN')")
     @GetMapping("/queue")
-    public ApiResponse<List<ContentReview>> queue() {
-        return ApiResponse.ok(reviewService.humanQueue());
+    public ApiResponse<List<ReviewQueueItem>> queue() {
+        return ApiResponse.ok(reviewService.pendingQueue());
     }
 
+    /**
+     * 审核已有 content_review 记录的条目。
+     */
     @PreAuthorize("hasAnyRole('MODERATOR','ADMIN')")
     @PostMapping("/{reviewId}/decision")
     public ApiResponse<ContentReview> decide(@PathVariable Long reviewId,
                                              @RequestBody Map<String, String> body) {
         ReviewStatus decision = ReviewStatus.valueOf(body.get("decision"));
         return ApiResponse.ok(reviewService.review(reviewId, decision, CurrentUser.userId(), body.get("reason")));
+    }
+
+    /**
+     * 审核尚无 content_review 记录的待审攻略（如爬虫/AI 直接入库的 DRAFT）。
+     */
+    @PreAuthorize("hasAnyRole('MODERATOR','ADMIN')")
+    @PostMapping("/guides/{guideId}/decision")
+    public ApiResponse<Void> decideGuide(@PathVariable Long guideId,
+                                         @RequestBody Map<String, String> body) {
+        ReviewStatus decision = ReviewStatus.valueOf(body.get("decision"));
+        reviewService.reviewGuideDirectly(guideId, decision, CurrentUser.userId(), body.get("reason"));
+        return ApiResponse.ok();
     }
 }

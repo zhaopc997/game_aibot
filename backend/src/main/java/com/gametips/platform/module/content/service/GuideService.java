@@ -53,8 +53,9 @@ public class GuideService {
 
     @org.springframework.cache.annotation.CacheEvict(cacheNames = "guide:detail", key = "#id")
     @Transactional
-    public void submitReview(Long id) {
+    public void submitReview(Long id, Long operatorId) {
         Guide guide = get(id);
+        ensureOwnerOrAdmin(guide, operatorId);
         if (guide.getStatus() != GuideStatus.DRAFT) {
             throw new BizException(ErrorCodes.CONFLICT, "仅草稿可提交审核");
         }
@@ -68,8 +69,9 @@ public class GuideService {
 
     @org.springframework.cache.annotation.CacheEvict(cacheNames = "guide:detail", key = "#id")
     @Transactional
-    public void markOutdated(Long id) {
+    public void markOutdated(Long id, Long operatorId) {
         Guide guide = get(id);
+        ensureOwnerOrAdmin(guide, operatorId);
         guide.setStatus(GuideStatus.OUTDATED);
         guideRepository.save(guide);
     }
@@ -78,9 +80,7 @@ public class GuideService {
     @Transactional
     public void claimCompatible(Long id, Long authorId) {
         Guide guide = get(id);
-        if (!guide.getAuthorId().equals(authorId)) {
-            throw new BizException(ErrorCodes.FORBIDDEN, "只能操作自己的攻略");
-        }
+        ensureOwnerOrAdmin(guide, authorId);
         if (guide.getStatus() != GuideStatus.PENDING_VERIFICATION
                 && guide.getStatus() != GuideStatus.OUTDATED) {
             throw new BizException(ErrorCodes.CONFLICT, "当前状态无需声明兼容");
@@ -90,12 +90,23 @@ public class GuideService {
     }
 
     /**
+     * 属主校验：仅作者本人或 ADMIN 可操作该攻略。
+     */
+    private void ensureOwnerOrAdmin(Guide guide, Long operatorId) {
+        boolean isAdmin = com.gametips.platform.common.security.CurrentUser.hasRole("ADMIN");
+        if (!isAdmin && !guide.getAuthorId().equals(operatorId)) {
+            throw new BizException(ErrorCodes.FORBIDDEN, "只能操作自己的攻略");
+        }
+    }
+
+    /**
      * 作者更新攻略时，将旧内容写入版本历史快照（用于 diff）。
      */
     @org.springframework.cache.annotation.CacheEvict(cacheNames = "guide:detail", key = "#id")
     @Transactional
     public Guide updateWithSnapshot(Long id, Guide update, Long operatorId) {
         Guide guide = get(id);
+        ensureOwnerOrAdmin(guide, operatorId);
         snapshot(guide);
         guide.setTitle(update.getTitle());
         guide.setSummary(update.getSummary());
@@ -112,8 +123,9 @@ public class GuideService {
     }
 
     @Transactional
-    public Guide delete(Long id) {
+    public Guide delete(Long id, Long operatorId) {
         Guide guide = get(id);
+        ensureOwnerOrAdmin(guide, operatorId);
         guide.setStatus(GuideStatus.ARCHIVED);
         guide = guideRepository.save(guide);
         removeIndex(guide.getId());
@@ -135,8 +147,9 @@ public class GuideService {
      * 克隆攻略用于新版本（内容复制，状态置草稿）。
      */
     @Transactional
-    public Guide cloneForVersion(Long id, Long newVersionId) {
+    public Guide cloneForVersion(Long id, Long newVersionId, Long operatorId) {
         Guide source = get(id);
+        ensureOwnerOrAdmin(source, operatorId);
         Guide clone = new Guide();
         clone.setGameId(source.getGameId());
         clone.setVersionId(newVersionId);
@@ -181,6 +194,9 @@ public class GuideService {
     }
 
     public Page<Guide> listByGame(Long gameId, GuideStatus status, int page, int size) {
+        if (gameId == null) {
+            return guideRepository.findByStatusOrderByCreatedAtDesc(status, PageRequest.of(page, size));
+        }
         return guideRepository.findByGameIdAndStatusOrderByCreatedAtDesc(gameId, status, PageRequest.of(page, size));
     }
 }

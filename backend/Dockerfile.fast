@@ -1,0 +1,47 @@
+# ═══════════════════════════════════════════════════════════════
+# 后端快速镜像（复用宿主已构建的 jar）
+#
+# 用途：单机/本机部署时，避免在容器内重复下载 Maven 依赖。
+#
+# 背景：标准 Dockerfile 用多阶段构建，在容器内跑 `mvn package`。
+# 实测每次重建都要重新下载约 526 个依赖（`dependency:go-offline`
+# 不完整，缓存层难以命中），单次构建约 10 分钟。
+# 而宿主机的 ~/.m2 是热的，`mvn package` 只需 1~2 分钟，
+# 镜像层只剩 COPY jar，几秒钟完成。
+#
+# 用法（推荐，会自动先构建 jar）：
+#   ./scripts/build-backend.sh
+#
+# 手动用法：
+#   (cd backend && mvn -q package -DskipTests)
+#   docker build -f backend/Dockerfile.fast -t game-platform-backend:latest backend/
+#
+# 注意：官方发布了正式 CI 时仍建议用标准 Dockerfile（构建可复现、不依赖宿主环境）。
+# ═══════════════════════════════════════════════════════════════
+
+FROM eclipse-temurin:21-jre-jammy
+
+RUN groupadd -r app && useradd -r -g app app
+
+WORKDIR /app
+
+ENV TZ=Asia/Shanghai \
+    LANG=C.UTF-8
+
+RUN mkdir -p /data/uploads /data/logs && chown -R app:app /data /app
+
+# 直接使用宿主编译产物
+COPY --chown=app:app target/*.jar /app/app.jar
+
+USER app
+
+EXPOSE 8080
+
+STOPSIGNAL SIGTERM
+
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/data/logs -Djava.security.egd=file:/dev/./urandom"
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=5 \
+  CMD curl -fsS http://localhost:8080/actuator/health/readiness || exit 1
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar --spring.profiles.active=prod"]

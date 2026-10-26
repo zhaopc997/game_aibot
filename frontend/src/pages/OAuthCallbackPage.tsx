@@ -1,25 +1,35 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import client from '@/api/client'
-import { useAuth } from '@/auth/AuthContext'
+import client, { unwrap } from '@/api/client'
+import { useAuth, type LoginResponse } from '@/auth/AuthContext'
 
 export default function OAuthCallbackPage() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { adoptSession } = useAuth()
+  const handled = useRef(false)
+
   useEffect(() => {
+    // React 18 开发模式 StrictMode 会双调用 effect，用 ref 保证只处理一次
+    if (handled.current) return
     const code = params.get('code')
-    if (!code) return
-    client.post<{ data: { accessToken: string; refreshToken: string; user: any } }>(`/auth/oauth/mock?provider=github&code=${code}`)
-      .then((r) => {
-        const d = r.data.data
-        // 直接写 token + 跳走(简化:复用旧 login 流程的 token 持久化)
-        localStorage.setItem('guide_access_token', d.accessToken)
-        localStorage.setItem('guide_refresh_token', d.refreshToken)
-        login(d.user.username, 'oauth')
-        navigate('/')
+    if (!code) {
+      navigate('/login', { replace: true })
+      return
+    }
+    handled.current = true
+
+    const provider = params.get('provider') || 'github'
+    client
+      .post(`/auth/oauth/mock?provider=${provider}&code=${encodeURIComponent(code)}`)
+      .then((resp) => {
+        // 后端已直接下发 token 与用户，直接接管会话；
+        // 不能用用户名+假密码再调登录接口（会失败且未 await）
+        adoptSession(unwrap<LoginResponse>(resp))
+        navigate('/', { replace: true })
       })
-      .catch(() => navigate('/login'))
-  }, [])
+      .catch(() => navigate('/login', { replace: true }))
+  }, [params, navigate, adoptSession])
+
   return <div className="min-h-screen grid place-items-center text-ink-500">处理登录回调…</div>
 }

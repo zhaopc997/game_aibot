@@ -1,0 +1,79 @@
+# ═══════════════════════════════════════════════════════════════
+# Caddy 反向代理 —— 自动 HTTPS
+#
+# 为什么用 Caddy：自动申请并续期 Let's Encrypt 证书，
+# 无需手工 certbot + cron 续期，配置只有几行。
+#
+# 使用：
+#   1. 把下面的 SITE_DOMAIN 改成你的真实域名（需已解析到本机公网 IP）
+#   2. docker compose -p gameaibot \
+#        -f docker-compose.prod.yml -f docker-compose.tls.yml \
+#        --env-file .env.production up -d
+#
+# 需要开放的端口：80（ACME 质询 + HTTP 跳转）、443（HTTPS）
+# ═══════════════════════════════════════════════════════════════
+
+{
+	# ACME 账号邮箱，证书到期/吊销时会收到通知
+	email {$ACME_EMAIL}
+
+	# 生产环境使用正式 ACME 服务
+	# 测试时可改为 https://acme-staging-v02.api.letsencrypt.org/directory
+	# 以免触发 Let's Encrypt 的速率限制
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+
+	# 关闭管理端点的公网暴露（默认 localhost:2019，这里显式关闭）
+	admin off
+}
+
+# ───── 站点 ─────
+{$SITE_DOMAIN} {
+	# 安全响应头（Nginx 内层也设了一份，这里补齐 HTTPS 场景）
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# 反代到前端 Nginx（它负责静态资源 + /api 转发到后端）
+	reverse_proxy frontend:80 {
+		# 传递真实客户端信息，供后端限流/审计使用
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	# WebSocket（/ws）由 reverse_proxy 自动处理 Upgrade
+	# AI 生成类接口耗时较长，放宽超时
+	timeouts {
+		read_body 60s
+		write 180s
+		idle 300s
+	}
+
+	# 日志（json 格式便于采集）
+	log {
+		output file /data/access.log {
+			roll_size 50MiB
+			roll_keep 10
+		}
+		format json
+	}
+
+	encode zstd gzip
+}
+
+# ───── HTTP → HTTPS 自动跳转由 Caddy 默认处理，无需额外配置 ─────
+
+# ───── 健康检查端点（不写访问日志）─────
+http://{$SITE_DOMAIN} {
+	@health path /healthz
+	handle @health {
+		respond "ok" 200
+	}
+	# 其余全部跳 HTTPS
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}

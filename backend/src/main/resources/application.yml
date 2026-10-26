@@ -1,20 +1,22 @@
 server:
   port: 8080
+  forward-headers-strategy: native
 
 spring:
   application:
     name: guide-platform
 
   # ───── V2 RAG 用的 ES 客户端(spring-data-elasticsearch) ─────
+  # 端口默认值与 docker-compose.yml 保持一致(9200);如需改宿主机端口,通过环境变量覆盖
   elasticsearch:
-    uris: "http://localhost:9201"
+    uris: "${ES_URIS:http://localhost:9200}"
     socket-timeout: 30s
     connection-timeout: 5s
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/guide_platform
-    username: postgres
-    password: postgres
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/guide_platform}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -29,11 +31,12 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+    validate-on-migrate: false
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 logging:
   level:
@@ -41,15 +44,18 @@ logging:
 
 app:
   jwt:
-    secret: "guide-platform-jwt-secret-key-please-change-in-production-0123456789abcdef"
+    # 高优先级：生产环境必须通过环境变量 JWT_SECRET 注入，不依赖下述默认值
+    secret: "${JWT_SECRET:guide-platform-jwt-secret-key-please-change-in-production-0123456789abcdef}"
     access-token-ttl: 30m
     refresh-token-ttl: 7d
   ai:
-    provider: mock   # V1 模块 AiParseProcessor 走 mock;V2 RAG(agent chat)走 openai 兼容的 SiliconFlow
+    provider: openai   # mock | openai；openai 走 SiliconFlow 兼容接口生成图文攻略
     openai:
-      api-key: ${OPENAI_API_KEY:sk-mock}
+      api-key: ${OPENAI_API_KEY:}
       base-url: "https://api.siliconflow.cn/v1"
-      model: "gpt-4o-mini"
+      model: "deepseek-ai/DeepSeek-V3"
+      timeout-seconds: 120   # 单次请求超时
+      max-tokens: 1500      # 单次生成上限，控制成本
   upload:
     local-dir: "./uploads"
   oauth:
@@ -77,7 +83,7 @@ app:
   search:
     provider: elasticsearch   # V2 切到 ES(原 pg 降级用)
     elasticsearch:
-      uris: "http://localhost:9201"
+      uris: "${ES_URIS:http://localhost:9200}"
 
   # ───── V2 AI Copilot RAG 配置(§4.4-4.6 architecture-v2) ─────
   rag:

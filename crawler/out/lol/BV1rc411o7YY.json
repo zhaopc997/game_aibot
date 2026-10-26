@@ -1,0 +1,29 @@
+{
+  "bv_id": "BV1rc411o7YY",
+  "av_id": 280089971,
+  "url": "https://www.bilibili.com/video/BV1rc411o7YY",
+  "title": "陈泽再次谈起为什么不打英雄联盟了",
+  "description": "",
+  "cover_url": "http://i0.hdslb.com/bfs/archive/92bdc385834b4f3387738d5f3494475924e5cf3a.jpg",
+  "duration": 187,
+  "view_count": 231460,
+  "danmaku_count": 48,
+  "like_count": 2042,
+  "publish_time": "2023-10-25T02:38:26",
+  "up_mid": 473379621,
+  "up_name": "Pop牙",
+  "up_face": "https://i0.hdslb.com/bfs/face/dca131f1b70fd809c894dfe86802ab62aff25ab9.jpg",
+  "pages": [
+    {
+      "part_index": 1,
+      "cid": 1310243937,
+      "title": "陈泽再次谈起为什么不打英雄联盟了",
+      "duration": 187
+    }
+  ],
+  "game_slug": "lol",
+  "game_id": 6,
+  "game_name": "英雄联盟",
+  "matched_keyword": "英雄联盟 攻略",
+  "crawl_time": "2026-09-07T19:17:36.773476"
+}

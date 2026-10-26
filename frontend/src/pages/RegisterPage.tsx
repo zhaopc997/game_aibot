@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Gamepad2 } from 'lucide-react'
@@ -19,8 +20,8 @@ export default function RegisterPage() {
     try {
       await register(form.username, form.email, form.password)
       navigate('/')
-    } catch (e: any) {
-      setErr(e?.response?.data?.message ?? e?.message ?? '注册失败')
+    } catch (e: unknown) {
+      setErr(errorMessage(e, '注册失败'))
     } finally { setLoading(false) }
   }
 

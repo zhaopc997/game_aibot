@@ -49,19 +49,19 @@ public class GuideController {
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
-        guideService.get(id);
+        guideService.delete(id, CurrentUser.userId());
         return ApiResponse.ok();
     }
 
     @PostMapping("/{id}/submit-review")
     public ApiResponse<Void> submitReview(@PathVariable Long id) {
-        guideService.submitReview(id);
+        guideService.submitReview(id, CurrentUser.userId());
         return ApiResponse.ok();
     }
 
     @PostMapping("/{id}/mark-outdated")
     public ApiResponse<Void> markOutdated(@PathVariable Long id) {
-        guideService.markOutdated(id);
+        guideService.markOutdated(id, CurrentUser.userId());
         return ApiResponse.ok();
     }
 
@@ -85,7 +85,7 @@ public class GuideController {
 
     @PostMapping("/{id}/clone")
     public ApiResponse<Guide> clone(@PathVariable Long id, @RequestParam Long versionId) {
-        return ApiResponse.ok(guideService.cloneForVersion(id, versionId));
+        return ApiResponse.ok(guideService.cloneForVersion(id, versionId, CurrentUser.userId()));
     }
 
     @GetMapping

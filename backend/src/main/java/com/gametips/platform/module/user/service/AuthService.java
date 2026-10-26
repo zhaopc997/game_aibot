@@ -45,6 +45,9 @@ public class AuthService {
     public LoginResponse refresh(RefreshRequest req) {
         Long userId = jwtService.extractUserId(req.refreshToken());
         User user = userService.getById(userId);
+        if (user.getStatus() != com.gametips.platform.module.user.domain.UserStatus.NORMAL) {
+            throw new BizException(ErrorCodes.UNAUTHORIZED, "账号已被禁用");
+        }
         List<String> roles = userService.getRoles(user.getId());
         return issueTokens(user, roles);
     }
