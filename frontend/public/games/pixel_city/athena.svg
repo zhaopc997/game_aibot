@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg_athena" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#ca8a04" stop-opacity="0.8" />
+    </linearGradient>
+    <linearGradient id="border_athena" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <filter id="glow_athena" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Pixel Pattern Grid Background -->
+  <rect width="200" height="200" rx="16" fill="url(#bg_athena)" />
+  <g opacity="0.15">
+    <pattern id="grid_athena" width="10" height="10" patternUnits="userSpaceOnUse">
+      <rect width="5" height="5" fill="#ffffff" />
+    </pattern>
+    <rect width="200" height="200" rx="16" fill="url(#grid_athena)" />
+  </g>
+
+  <!-- Pixelated Frame Border -->
+  <rect x="6" y="6" width="188" height="188" rx="12" fill="none" stroke="url(#border_athena)" stroke-width="4" />
+  <rect x="12" y="12" width="176" height="176" rx="8" fill="none" stroke="#facc15" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="4 2" />
+
+  <!-- Pixel Corner Accents -->
+  <rect x="10" y="10" width="8" height="8" fill="#facc15" />
+  <rect x="182" y="10" width="8" height="8" fill="#facc15" />
+  <rect x="10" y="182" width="8" height="8" fill="#facc15" />
+  <rect x="182" y="182" width="8" height="8" fill="#facc15" />
+
+  <!-- Center Pixel Art Emblem -->
+  <circle cx="100" cy="85" r="46" fill="#eab308" fill-opacity="0.25" filter="url(#glow_athena)" />
+  <polygon points="100,45 138,85 100,125 62,85" fill="none" stroke="#facc15" stroke-width="3" stroke-dasharray="6 3" />
+  <text x="100" y="100" font-size="44" text-anchor="middle" dominant-baseline="middle">✨</text>
+
+  <!-- Level / Badge -->
+  <g transform="translate(100, 142)">
+    <rect x="-70" y="-14" width="140" height="28" rx="6" fill="#090d16" stroke="#eab308" stroke-width="2" />
+    <text x="0" y="5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="13" fill="#ffffff" text-anchor="middle">雅典娜</text>
+  </g>
+
+  <!-- Role Subtitle -->
+  <text x="100" y="178" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="10" fill="#facc15" text-anchor="middle" letter-spacing="1">圣辉·长矛破盾</text>
+</svg>

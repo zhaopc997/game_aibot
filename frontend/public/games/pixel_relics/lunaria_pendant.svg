@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="relic_bg_lunaria_pendant" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b" />
+      <stop offset="100%" stop-color="#27272a" />
+    </linearGradient>
+    <linearGradient id="relic_glow_lunaria_pendant" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5d0fe" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+  </defs>
+
+  <rect width="200" height="200" rx="14" fill="url(#relic_bg_lunaria_pendant)" />
+  <rect x="8" y="8" width="184" height="184" rx="10" fill="none" stroke="url(#relic_glow_lunaria_pendant)" stroke-width="3.5" />
+  
+  <!-- Pixel Diamond -->
+  <polygon points="100,32 152,84 100,136 48,84" fill="#c084fc" fill-opacity="0.18" stroke="#f5d0fe" stroke-width="2" />
+  <text x="100" y="94" font-size="46" text-anchor="middle" dominant-baseline="middle">📿</text>
+
+  <!-- Name Plate -->
+  <rect x="25" y="145" width="150" height="26" rx="6" fill="#09090b" stroke="#c084fc" stroke-width="1.5" />
+  <text x="100" y="162" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="800" font-size="12" fill="#ffffff" text-anchor="middle">月神吊坠</text>
+  <text x="100" y="186" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="600" font-size="9" fill="#f5d0fe" text-anchor="middle">受击偷取怒气</text>
+</svg>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sky_bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="40%" stop-color="#1e1b4b" />
+      <stop offset="75%" stop-color="#4338ca" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="neon_title" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="35%" stop-color="#ec4899" />
+      <stop offset="70%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#22c55e" />
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#sky_bg)" />
+
+  <!-- Retro Pixel Grid Skyline -->
+  <g fill="#020617" opacity="0.8">
+    <rect x="40" y="240" width="60" height="210" />
+    <rect x="120" y="190" width="80" height="260" />
+    <rect x="220" y="270" width="70" height="180" />
+    <rect x="310" y="170" width="90" height="280" />
+    <rect x="420" y="220" width="70" height="230" />
+    <rect x="510" y="160" width="100" height="290" />
+    <rect x="630" y="250" width="60" height="200" />
+    <rect x="710" y="210" width="70" height="240" />
+  </g>
+
+  <!-- Windows Grid -->
+  <g fill="#fde047" opacity="0.6">
+    <rect x="140" y="210" width="10" height="10" />
+    <rect x="170" y="240" width="10" height="10" />
+    <rect x="330" y="190" width="12" height="12" />
+    <rect x="360" y="230" width="12" height="12" />
+    <rect x="530" y="180" width="12" height="12" />
+    <rect x="570" y="220" width="12" height="12" />
+    <rect x="730" y="230" width="10" height="10" />
+  </g>
+
+  <!-- Big Neon Moon -->
+  <circle cx="680" cy="110" r="55" fill="#e0e7ff" opacity="0.9" />
+  <circle cx="660" cy="95" r="45" fill="url(#sky_bg)" />
+
+  <!-- Stars -->
+  <g fill="#ffffff" opacity="0.8">
+    <rect x="80" y="60" width="4" height="4" />
+    <rect x="180" y="90" width="6" height="6" />
+    <rect x="290" y="45" width="4" height="4" />
+    <rect x="450" y="80" width="5" height="5" />
+    <rect x="560" y="50" width="4" height="4" />
+  </g>
+
+  <!-- Main Game Banner -->
+  <g transform="translate(400, 150)">
+    <!-- Shadow -->
+    <text x="4" y="4" font-family="-apple-system, BlinkMacSystemFont, 'Impact', sans-serif" font-weight="900" font-size="58" fill="#090d16" text-anchor="middle" letter-spacing="4">指 尖 像 素 城</text>
+    <!-- Foreground -->
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Impact', sans-serif" font-weight="900" font-size="58" fill="url(#neon_title)" text-anchor="middle" letter-spacing="4">指 尖 像 素 城</text>
+  </g>
+
+  <g transform="translate(400, 215)">
+    <rect x="-180" y="-18" width="360" height="36" rx="8" fill="#090d16" stroke="#38bdf8" stroke-width="2.5" />
+    <text x="0" y="6" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="700" font-size="16" fill="#38bdf8" text-anchor="middle" letter-spacing="2">PIXEL CITY · 放置卡牌策略手游</text>
+  </g>
+
+  <!-- Features Badge Strip -->
+  <g transform="translate(400, 275)">
+    <rect x="-240" y="-14" width="480" height="28" rx="6" fill="#1e1b4b" opacity="0.9" stroke="#c084fc" stroke-width="1.5" />
+    <text x="0" y="5" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="600" font-size="13" fill="#e0e7ff" text-anchor="middle">
+      ⚡虚空神将 · 🌙怒气压制 · 🗡️破盾斩杀 · 🔮专属圣物
+    </text>
+  </g>
+</svg>
