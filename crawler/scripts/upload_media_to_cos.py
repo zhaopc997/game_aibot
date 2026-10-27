@@ -131,10 +131,11 @@ def main() -> int:
         ctype = CONTENT_TYPES.get(p.suffix.lower(), "application/octet-stream")
         try:
             with p.open("rb") as fh:
+                # 不传 ContentLength：SDK 会按 Body 自行计算；
+                # 手动传 int 会触发 "Header part must be str or bytes" 错误
                 client.put_object(
                     Bucket=bucket, Key=key, Body=fh,
                     ContentType=ctype, CacheControl=CACHE_CONTROL,
-                    ContentLength=size,
                 )
             return {"file": str(p), "key": key, "status": "ok", "bytes": size}
         except Exception as e:  # noqa: BLE001
