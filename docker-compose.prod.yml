@@ -67,7 +67,10 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=${ES_SECURITY_ENABLED:-false}
-      - ES_JAVA_OPTS=-Xms${ES_HEAP:-1g} -Xmx${ES_HEAP:-1g}
+      # 显式关闭机器学习模块：本站只用全文检索，ML 会预分配内存与后台进程。
+      # 实测未启用时仍有 0 个 autodetect 进程，但显式关闭可防止后续被意外拉起。
+      - xpack.ml.enabled=false
+      - ES_JAVA_OPTS=-Xms${ES_HEAP:-256m} -Xmx${ES_HEAP:-256m}
       - bootstrap.memory_lock=true
     ulimits:
       memlock: { soft: -1, hard: -1 }
@@ -85,21 +88,16 @@ services:
         limits:
           memory: 2G
 
-  minio:
-    image: minio/minio:latest
-    container_name: game-prod-minio
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
-    volumes:
-      - prod-miniodata:/data
-    networks: [prodx]
-    deploy:
-      resources:
-        limits:
-          memory: 1G
+  # ─────────────────────────────────────────────────────────────
+  # MinIO 已移除：上传文件改由腾讯云 COS 承载（见 CosStorageService）。
+  # 应用代码与 nginx 均无引用，属纯闲置，占用约 62MB 常驻内存。
+  # 数据卷 prod-miniodata 仍保留在磁盘上，如需回滚：
+  #   取消下面注释并 docker compose up -d
+  # ─────────────────────────────────────────────────────────────
+  # minio:
+  #   image: minio/minio:latest
+  #   container_name: game-prod-minio
+  #   ...
 
   # ────────── 应用层 ──────────
   backend:
@@ -147,7 +145,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1.5G
+          # 1G 而非 1.5G：JVM 默认按容器限制的 25% 推导堆上限，
+          # 1.5G 会得到 384MB 堆，而实测堆峰值仅 118MB，属严重过配。
+          # 降到 1G 后堆自动为 256MB，仍留一倍余量，同时让 OOM 更早暴露。
+          memory: 1G
     # 停机给足时间（配合应用内30s 优雅停机）
     stop_grace_period: 45s
 
