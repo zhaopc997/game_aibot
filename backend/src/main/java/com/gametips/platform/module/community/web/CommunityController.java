@@ -63,7 +63,7 @@ public class CommunityController {
     }
 
     @PostMapping("/questions")
-    public ApiResponse<Question> createQuestion(@RequestBody Question q) {
+    public ApiResponse<Question> createQuestion(@jakarta.validation.Valid @RequestBody Question q) {
         q.setUserId(CurrentUser.userId());
         return ApiResponse.ok(communityService.createQuestion(q));
     }

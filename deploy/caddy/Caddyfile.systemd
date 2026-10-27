@@ -1,19 +1,25 @@
 # ═══════════════════════════════════════════════════════════════
-# helozero.com 站点配置
+# helozero.com 站点配置（宿主机 systemd 部署版）
 #   · 自动申请/续期 Let's Encrypt 证书
 #   · 反代到本机 8088（应用只绑回环，不直接暴露公网）
+#   · 安全响应头（对应渗透测试报告 F-03 / F-04）
 # ═══════════════════════════════════════════════════════════════
 
 {
 	email admin@helozero.com
-
-	# 首次调试建议先注释下面两行，改用 staging 环境验证，避免消耗正式额度：
-	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
 
 # ───── 主站 ─────
 helozero.com {
 	encode zstd gzip
+
+	# ── F-03：/api 的规范化跳转必须显式写 https ──
+	# 不拦截的话请求会落到后端，由 Spring 生成 301，
+	# 而它给出的 Location 是 http://helozero.com/api/（明文协议），
+	# 浏览器会先发一次明文请求，链路上可被劫持或篡改。
+	# redir 在 Caddy 的指令顺序中先于 reverse_proxy，因此能抢在后端之前生效。
+	@apiBare path /api
+	redir @apiBare https://helozero.com/api/ 301
 
 	header {
 		# 强制 HTTPS（1 年），含子域
@@ -21,13 +27,25 @@ helozero.com {
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "SAMEORIGIN"
 		Referrer-Policy "strict-origin-when-cross-origin"
+
+		# ── F-04：补齐静态页缺失的安全头 ──
+		# CSP 与前端 nginx 的策略保持一致，并补上 object-src / base-uri / form-action。
+		#   · img-src 放开 https:  —— 图片托管在 COS
+		#   · style-src 允许 unsafe-inline —— Vite 注入样式所需（不涉及脚本执行）
+		#   · script-src 仅 'self' —— 已确认构建产物无内联脚本
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+		# 禁用本站不需要的强能力，缩小恶意脚本滥用的面
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), gyroscope=(), magnetometer=()"
+		# 隔离跨窗口引用，防 window.opener 滥用与 Spectre 类侧信道
+		Cross-Origin-Opener-Policy "same-origin"
+		X-Permitted-Cross-Domain-Policies "none"
+
 		-Server
 	}
 
 	# 反代到应用（docker 端口只绑 127.0.0.1，公网只能经 Caddy 进来）
 	reverse_proxy 127.0.0.1:8088 {
 		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-Proto {scheme}
 		# AI 问答等长耗时接口
 		transport http {
 			read_timeout 180s

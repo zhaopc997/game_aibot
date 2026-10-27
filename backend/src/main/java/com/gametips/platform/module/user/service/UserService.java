@@ -26,11 +26,11 @@ public class UserService {
 
     @Transactional
     public User register(RegisterRequest req) {
-        if (userRepository.existsByUsername(req.username())) {
-            throw new BizException(ErrorCodes.CONFLICT, "用户名已存在");
-        }
-        if (userRepository.existsByEmail(req.email())) {
-            throw new BizException(ErrorCodes.CONFLICT, "邮箱已注册");
+        // 用户枚举防护：不区分「用户名已存在」与「邮箱已注册」。
+        // 原实现分别提示，攻击者可据此批量探测有效账号，为撞库准备字典。
+        if (userRepository.existsByUsername(req.username())
+                || userRepository.existsByEmail(req.email())) {
+            throw new BizException(ErrorCodes.CONFLICT, "用户名或邮箱已被占用，请更换后重试");
         }
         User user = new User();
         user.setUsername(req.username());

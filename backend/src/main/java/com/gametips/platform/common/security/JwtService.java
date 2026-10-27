@@ -66,4 +66,13 @@ public class JwtService {
     public long accessTokenTtlSeconds() {
         return accessTtl.toSeconds();
     }
+
+    public long refreshTokenTtlSeconds() {
+        return refreshTtl.toSeconds();
+    }
+
+    /** 取令牌过期时间，用于落库时写入 expires_at */
+    public java.time.Instant extractExpiration(String token) {
+        return parse(token).getExpiration().toInstant();
+    }
 }
