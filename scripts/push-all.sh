@@ -111,7 +111,14 @@ for r in "${REMOTES[@]}"; do
 done
 
 echo ""
-if [[ "$ALL_OK" -eq 1 && ${#FAILED[@]} -eq 0 ]]; then
+if [[ "$ALL_OK" -eq 1 ]]; then
+  # 校验通过即成功，不看 push 的退出码。
+  # 原因：双人协作时对方可能刚好同时推送，git push 会报
+  #   "cannot lock ref ...: is at <我们的提交> but expected <旧值>"
+  # 这种竞态下提交其实已经落地，以远程实际 sha 为准才准确。
+  if [[ ${#FAILED[@]} -gt 0 ]]; then
+    warn "push 曾报错（${FAILED[*]}），但远程实际已是 ${LOCAL_SHA:0:7}，判定为已同步"
+  fi
   ok "两个远程均已同步到 ${LOCAL_SHA:0:7}"
   exit 0
 fi
