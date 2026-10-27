@@ -123,7 +123,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-    </dependencies>
+            <!-- 腾讯云 COS：对象存储（生产用于图片/视频等上传文件） -->
+        <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>cos_api</artifactId>
+            <version>5.6.283</version>
+        </dependency>
+
+</dependencies>
 
     <build>
         <plugins>

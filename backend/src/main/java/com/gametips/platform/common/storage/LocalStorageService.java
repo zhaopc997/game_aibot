@@ -2,6 +2,7 @@ package com.gametips.platform.common.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -19,6 +20,9 @@ import java.util.UUID;
  */
 @Slf4j
 @Component
+// 默认实现：未显式指定 app.storage.provider=cos 时使用本地磁盘，
+// 保证本地开发无需任何云存储凭据即可跑通上传功能
+@ConditionalOnProperty(name = "app.storage.provider", havingValue = "local", matchIfMissing = true)
 public class LocalStorageService implements StorageService {
 
     private final Path root;
