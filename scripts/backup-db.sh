@@ -71,7 +71,7 @@ mkdir -p "$BACKUP_DIR"
 TS=$(date +%Y%m%d_%H%M%S)
 OUT="$BACKUP_DIR/${PG_DB}_${TS}.dump"
 
-log "1/3 导出数据库 $PG_DB …"
+log "1/4 导出数据库 $PG_DB …"
 # -Fc 自定义格式：压缩 + 支持 pg_restore 选择性恢复；-Z6 兼顾速度与体积
 docker exec "$CID" pg_dump -U "$PG_USER" -d "$PG_DB" -Fc -Z6 > "$OUT" 2>/tmp/dump_err.txt \
   || die "pg_dump 失败：$(head -3 /tmp/dump_err.txt)"
@@ -80,7 +80,7 @@ SIZE=$(du -h "$OUT" | cut -f1)
 ok "已生成 $OUT（$SIZE）"
 
 # ───── 完整性校验 ─────
-log "2/3 校验备份完整性 …"
+log "2/4 校验备份完整性 …"
 docker run --rm -v "$BACKUP_DIR":/b postgres:16-alpine \
   pg_restore --list "/b/$(basename "$OUT")" > /tmp/restore_list.txt 2>/dev/null \
   || die "备份文件损坏：pg_restore --list 失败"
@@ -88,12 +88,23 @@ TABLE_N=$(grep -c "TABLE DATA" /tmp/restore_list.txt || true)
 ok "校验通过，含 $TABLE_N 张表的数据"
 
 # ───── 清理过期备份 ─────
-log "3/3 清理超过 ${KEEP_DAYS} 天的备份 …"
+log "3/4 清理超过 ${KEEP_DAYS} 天的备份 …"
 DELETED=0
 while IFS= read -r f; do
   rm -f "$f" && DELETED=$((DELETED + 1))
 done < <(find "$BACKUP_DIR" -name '*.dump' -type f -mtime +"$KEEP_DAYS" 2>/dev/null || true)
 ok "已清理 $DELETED 个过期备份"
+
+# ───── 上传到 COS（可选，失败不影响本地备份）─────
+if [[ -f "$ROOT/.cos.env" ]]; then
+  log "4/4 上传到 COS …"
+  # shellcheck disable=SC1091
+  set -a; . "$ROOT/.cos.env"; set +a
+  PYTHONPATH="${COS_PY_PATH:-/opt/cos-tools/lib}" \
+    python3 "$ROOT/scripts/upload-backup-to-cos.py" "$OUT" \
+    && ok "已上传 COS（异地副本）" \
+    || warn "COS 上传失败，本地备份已保留（不影响恢复）"
+fi
 
 echo ""
 ok "备份完成：$OUT（$SIZE，$TABLE_N 张表）"
