@@ -11,7 +11,7 @@
  */
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { existsSync, readdirSync, openSync, readSync, closeSync } from 'node:fs'
+import { existsSync, readdirSync, statSync, openSync, readSync, closeSync } from 'node:fs'
 import { join } from 'node:path'
 import { createRequire } from 'node:module'
 
@@ -73,7 +73,7 @@ test('unwrap: 支持原始类型与 null', () => {
 // 3. 游戏素材约定（防止回归）
 // ───────────────────────────
 const GAMES_DIR = join(process.cwd(), 'public', 'games')
-const EXTS = ['png', 'jpg', 'jpeg', 'webp']
+const EXTS = ['png', 'jpg', 'jpeg', 'webp', 'svg']
 
 /** 按文件头魔数判断真实格式——不信扩展名（这是本项目踩过的坑） */
 function realFormat(file) {
@@ -106,6 +106,7 @@ test('素材: 文件名均为 <数字>.<扩展名>', () => {
   }
   for (const f of files) {
     if (f.endsWith('.md')) continue // 说明文档
+    if (statSync(join(GAMES_DIR, f)).isDirectory()) continue // 子目录素材（如 pixel_city, naraka 等）
     if (!/^\d+\.(png|jpg|jpeg|webp|svg)$/.test(f)) bad.push(f)
   }
   assert.deepEqual(bad, [], `命名不规范的素材：${bad.join(', ')}`)
@@ -137,9 +138,9 @@ test('素材: 扩展名与内容一致（不一致会被浏览器拒绝解码）
   )
 })
 
-test('素材: 31 款游戏均至少有一个候选文件', () => {
+test('素材: 32 款游戏均至少有一个候选文件', () => {
   const missing = []
-  for (const id of Array.from({ length: 31 }, (_, i) => i + 1)) {
+  for (const id of Array.from({ length: 32 }, (_, i) => i + 1)) {
     const found = EXTS.some((ext) => existsSync(join(GAMES_DIR, `${id}.${ext}`)))
     if (!found) missing.push(id)
   }

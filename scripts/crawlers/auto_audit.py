@@ -101,6 +101,13 @@ GENRE_BLUEPRINTS = {
         'min_artifacts': 1,
         'min_mechanics': 2,
         'description': '吃鸡战术竞技必须包含：特种作战兵种、全枪械库(>=15)、配件机制'
+    },
+    '放置卡牌RPG': {
+        'min_chars': 15,
+        'min_weapons': 10,
+        'min_artifacts': 5,
+        'min_mechanics': 3,
+        'description': '放置卡牌策略必须包含：虚空/神明英雄(>=15)、专属圣物(>=10)、阵奕符文(>=5)、战斗机制(>=3)'
     }
 }
 

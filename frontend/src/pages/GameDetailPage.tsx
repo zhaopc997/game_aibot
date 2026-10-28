@@ -120,6 +120,7 @@ const FALLBACK_GAMES_MAP: Record<number, Partial<Game>> = {
   29: { id: 29, name: '阴阳师', category: '和风RPG', platform: '移动端 (iOS/Android/PC)', currentVersion: 'v1.7', coverUrl: null, description: '网易游戏自研的和风回合制 RPG 手游，人鬼共生的平安时代，式神收集与深度御魂养成。' },
   30: { id: 30, name: '崩坏3', category: '3D动作', platform: 'PC/移动端', currentVersion: 'v7.8', coverUrl: null, description: '米哈游自主研发的 3D 全视角动作手游，点燃国创动作游戏之魂，时空断裂与主机级打击感。' },
   31: { id: 31, name: '重返未来：1999', category: '复古神秘学RPG', platform: 'PC/移动端', currentVersion: 'v2.2', coverUrl: null, description: '深蓝互动研发的复古神秘学策略 RPG 手游，穿梭于暴雨引发的时代倒退之中，探寻历史真相。' },
+  32: { id: 32, name: '指尖像素城', category: '放置卡牌RPG', platform: '移动端 (微信小游戏/iOS/Android)', currentVersion: 'V2.4.0', coverUrl: '/games/pixel_city/cover.svg', description: '超人气像素风策略放置卡牌手游，神明与虚空神将、阵奕布阵、怒气压制与专属圣物。' },
 }
 
   useEffect(() => {

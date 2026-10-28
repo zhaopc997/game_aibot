@@ -20,6 +20,7 @@ from .modules.honkai3_crawler import crawl_and_sync_honkai3
 from .modules.dota2_crawler import crawl_and_sync_dota2
 from .modules.bg3_crawler import crawl_and_sync_bg3
 from .modules.diablo4_crawler import crawl_and_sync_diablo4
+from .modules.fingertip_pixel_crawler import crawl_and_sync_pixel_city
 
 
 def print_database_census():
@@ -73,7 +74,8 @@ def run():
         ('Honkai Impact 3rd (崩坏3 ID 30)', lambda: crawl_and_sync_honkai3(30)),
         ('DOTA 2 (刀塔2 ID 5)', lambda: crawl_and_sync_dota2(5)),
         ('Baldur\'s Gate 3 (博德之门3 ID 11)', lambda: crawl_and_sync_bg3(11)),
-        ('Diablo IV (暗黑破坏神4 ID 10)', lambda: crawl_and_sync_diablo4(10))
+        ('Diablo IV (暗黑破坏神4 ID 10)', lambda: crawl_and_sync_diablo4(10)),
+        ('Fingertip Pixel City (指尖像素城 ID 32)', lambda: crawl_and_sync_pixel_city(32))
     ]
 
     for idx, (desc, func) in enumerate(tasks, 1):

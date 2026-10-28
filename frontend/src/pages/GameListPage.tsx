@@ -46,6 +46,7 @@ const FALLBACK_GAMES: Game[] = [
   { id: 29, name: '阴阳师', category: 'RPG', platform: '移动端/PC', currentVersion: 'v1.7', coverUrl: null, description: '网易旗舰和风回合制 RPG 手游，人鬼共生平安时代与深度御魂养成。' },
   { id: 30, name: '崩坏3', category: 'ARPG', platform: 'PC/移动端', currentVersion: 'v7.8', coverUrl: null, description: '米哈游 3D 全视角动作手游，时空断裂与次世代打击感。' },
   { id: 31, name: '重返未来：1999', category: 'RPG', platform: 'PC/移动端', currentVersion: 'v2.2', coverUrl: null, description: '深蓝互动复古神秘学策略 RPG 手游，穿梭暴雨倒退探寻历史真相。' },
+  { id: 32, name: '指尖像素城', category: '放置卡牌RPG', platform: '移动端 (微信小游戏/iOS/Android)', currentVersion: 'V2.4.0', coverUrl: '/games/pixel_city/cover.svg', description: '超人气像素风策略放置卡牌手游，神明与虚空神将、阵奕布阵、怒气压制与专属圣物。' },
   { id: 7, name: 'CS2', category: 'FPS', platform: 'PC', currentVersion: '1.39', description: 'V社全球顶级战术第一人称射击游戏，起源2引擎动态体积烟雾与亚毫秒级 Sub-tick 物理判定。' },
 ]
 

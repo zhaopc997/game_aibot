@@ -119,6 +119,10 @@ export function CharacterStatsTab({ characters }: { characters: CharacterData[] 
     return characters.some((c) => c.gameId === 20 || c.region?.includes('聚窟洲') || c.region?.includes('火罗国') || c.element?.includes('真气') || c.element?.includes('无极') || c.weaponType?.includes('长剑') || c.weaponType?.includes('太刀') || c.weaponType?.includes('阔刀'))
   }, [characters])
 
+  const isPixelCity = useMemo(() => {
+    return characters.some((c) => c.gameId === 32 || c.region?.includes('虚空界') || c.region?.includes('月之神殿') || c.element?.includes('虚空神兽') || c.element?.includes('神明仙灵'))
+  }, [characters])
+
   const availableElements = useMemo(() => {
     const set = new Set<string>()
     characters.forEach((c) => {
@@ -249,7 +253,7 @@ export function CharacterStatsTab({ characters }: { characters: CharacterData[] 
           <div className="flex items-center gap-2 justify-between sm:justify-end text-xs">
             <span className="text-ink-500 font-medium">
               共 <strong className="text-ink-900 font-bold">{characters.length}</strong>{' '}
-              {isNaraka ? '位英雄豪杰' : isArknights ? '位干员' : isZzz ? '位代理人' : isHok || isLol ? '位英雄' : '位角色'}，当前展示{' '}
+              {isPixelCity ? '位虚空/阵奕英雄' : isNaraka ? '位英雄豪杰' : isArknights ? '位干员' : isZzz ? '位代理人' : isHok || isLol ? '位英雄' : '位角色'}，当前展示{' '}
               <strong className="text-accent-600 font-bold">{filtered.length}</strong> 位
             </span>
             {isFiltered && (
@@ -266,7 +270,7 @@ export function CharacterStatsTab({ characters }: { characters: CharacterData[] 
         {/* Row 2: Element / Role Filter */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           <span className="text-xs font-semibold text-ink-500 mr-1 shrink-0">
-            {isNaraka ? '武学流派:' : isHok ? '英雄定位:' : isArknights ? '职阶分类:' : isZzz ? '特性分类:' : isLol ? '职业定位:' : isHsr ? '战斗属性:' : isWukong ? '武学流派:' : isEldenRing ? '构筑流派:' : isZelda ? '能力形态:' : '元素分类:'}
+            {isPixelCity ? '阵营/神系:' : isNaraka ? '武学流派:' : isHok ? '英雄定位:' : isArknights ? '职阶分类:' : isZzz ? '特性分类:' : isLol ? '职业定位:' : isHsr ? '战斗属性:' : isWukong ? '武学流派:' : isEldenRing ? '构筑流派:' : isZelda ? '能力形态:' : '元素分类:'}
           </span>
           {availableElements.map((elem) => (
             <button
@@ -279,8 +283,8 @@ export function CharacterStatsTab({ characters }: { characters: CharacterData[] 
               }`}
             >
               {elem === 'ALL'
-                ? isNaraka ? '全部流派' : isHok ? '全部定位' : isArknights ? '全部职阶' : isZzz ? '全部特性' : isLol ? '全部定位' : isHsr ? '全部属性' : isWukong ? '全部流派' : isEldenRing ? '全部构筑' : isZelda ? '全部形态' : '全部元素'
-                : isNaraka || isHok || isArknights || isZzz || isLol || isWukong || isEldenRing || isZelda ? elem : isHsr ? `${elem}属性` : `${elem}元素`}
+                ? isPixelCity ? '全部阵营' : isNaraka ? '全部流派' : isHok ? '全部定位' : isArknights ? '全部职阶' : isZzz ? '全部特性' : isLol ? '全部定位' : isHsr ? '全部属性' : isWukong ? '全部流派' : isEldenRing ? '全部构筑' : isZelda ? '全部形态' : '全部元素'
+                : isPixelCity || isNaraka || isHok || isArknights || isZzz || isLol || isWukong || isEldenRing || isZelda ? elem : isHsr ? `${elem}属性` : `${elem}元素`}
             </button>
           ))}
         </div>
@@ -289,7 +293,7 @@ export function CharacterStatsTab({ characters }: { characters: CharacterData[] 
         <div className="flex flex-wrap items-center gap-4 pt-1 border-t border-ink-100/40 text-xs">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-semibold text-ink-500 shrink-0">
-              {isNaraka ? '擅长神兵:' : isHok ? '推荐分路:' : isArknights ? '职业分支:' : isZzz ? '专属武具:' : isLol ? '攻击方式:' : isHsr ? '命途定位:' : isWukong ? '神兵品级:' : isEldenRing ? '兵刃/触媒:' : isZelda ? '专属武器:' : '武器类型:'}
+              {isPixelCity ? '专属圣物:' : isNaraka ? '擅长神兵:' : isHok ? '推荐分路:' : isArknights ? '职业分支:' : isZzz ? '专属武具:' : isLol ? '攻击方式:' : isHsr ? '命途定位:' : isWukong ? '神兵品级:' : isEldenRing ? '兵刃/触媒:' : isZelda ? '专属武器:' : '武器类型:'}
             </span>
             {availableWeapons.map((w) => (
               <button
@@ -414,19 +418,21 @@ export function CharacterStatsTab({ characters }: { characters: CharacterData[] 
                 {/* Quick Stat Panel */}
                 <div className="mt-4 pt-3 border-t border-ink-100/60 grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="p-1.5 rounded-xl bg-surface/80">
-                    <div className="text-[10px] text-ink-400">{isNaraka ? '满级体力' : `${maxLv}级生命`}</div>
+                    <div className="text-[10px] text-ink-400">{isPixelCity ? '满级生命' : isNaraka ? '满级体力' : `${maxLv}级生命`}</div>
                     <div className="font-bold text-ink-800 mt-0.5">{maxStat?.hp || '-'}</div>
                   </div>
                   <div className="p-1.5 rounded-xl bg-surface/80">
-                    <div className="text-[10px] text-ink-400">{isNaraka ? '攻击加成' : `${maxLv}级攻击`}</div>
+                    <div className="text-[10px] text-ink-400">{isPixelCity ? '满级攻击' : isNaraka ? '攻击加成' : `${maxLv}级攻击`}</div>
                     <div className="font-bold text-ink-800 mt-0.5">{maxStat?.atk ? `${maxStat.atk}${isNaraka ? '%' : ''}` : '-'}</div>
                   </div>
                   <div className="p-1.5 rounded-xl bg-surface/80">
                     <div className="text-[10px] text-ink-400">
-                      {isNaraka ? '护甲 / 精力' : isHok ? '满级物防/魔抗' : isArknights ? '阻挡 / 法抗' : isZzz ? '冲击 / 精通' : isLol ? '满级护甲' : isHsr ? '基础速度' : isWukong ? '气力/法力' : isEldenRing ? '强韧度' : isZelda ? '能源/耐力' : '突破属性'}
+                      {isPixelCity ? '防御 / 速度' : isNaraka ? '护甲 / 精力' : isHok ? '满级物防/魔抗' : isArknights ? '阻挡 / 法抗' : isZzz ? '冲击 / 精通' : isLol ? '满级护甲' : isHsr ? '基础速度' : isWukong ? '气力/法力' : isEldenRing ? '强韧度' : isZelda ? '能源/耐力' : '突破属性'}
                     </div>
                     <div className="font-bold text-accent-700 mt-0.5 truncate">
-                      {isNaraka
+                      {isPixelCity
+                        ? `${maxStat?.def ?? '-'} / ${maxStat?.speed ?? (maxStat as any)?.spd ?? '-'}`
+                        : isNaraka
                         ? `${maxStat?.armor ?? 1250} / ${maxStat?.energy ?? 140}`
                         : isHok
                         ? `${maxStat?.def || '-'} / ${maxStat?.spell_block ?? 169}`
@@ -534,6 +540,10 @@ export function WeaponStatsTab({ weapons }: { weapons: WeaponData[] }) {
     return weapons.some((w) => w.gameId === 20 || w.type?.includes('近战武器') || w.type?.includes('远程武器') || w.name?.includes('太刀') || w.name?.includes('阔刀') || w.name?.includes('斩马刀') || w.name?.includes('长枪') || w.name?.includes('双节棍') || w.name?.includes('鸟铳'))
   }, [weapons])
 
+  const isPixelCity = useMemo(() => {
+    return weapons.some((w) => w.gameId === 32 || w.type?.includes('限定圣物') || w.type?.includes('专属圣物') || w.iconUrl?.includes('pixel_relics'))
+  }, [weapons])
+
   const availableTypes = useMemo(() => {
     const set = new Set<string>()
     weapons.forEach((w) => {
@@ -625,9 +635,9 @@ export function WeaponStatsTab({ weapons }: { weapons: WeaponData[] }) {
           <div className="flex items-center gap-2 justify-between sm:justify-end text-xs">
             <span className="text-ink-500 font-medium">
               共 <strong className="text-ink-900 font-bold">{weapons.length}</strong>{' '}
-              {isNaraka ? '件神兵武备' : isHok ? '件装备' : isArknights ? '件专属模组' : isZzz ? '件音擎' : isLol ? '件装备' : isHsr ? '个光锥' : isWukong ? '件兵刃' : '把武器'}，当前展示{' '}
+              {isPixelCity ? '件专属圣物/神器' : isNaraka ? '件神兵武备' : isHok ? '件装备' : isArknights ? '件专属模组' : isZzz ? '件音擎' : isLol ? '件装备' : isHsr ? '个光锥' : isWukong ? '件兵刃' : '把武器'}，当前展示{' '}
               <strong className="text-accent-600 font-bold">{filtered.length}</strong>{' '}
-              {isNaraka || isHok || isLol || isWukong || isArknights ? '件' : isZzz || isHsr ? '个' : '把'}
+              {isPixelCity || isNaraka || isHok || isLol || isWukong || isArknights ? '件' : isZzz || isHsr ? '个' : '把'}
             </span>
             {isFiltered && (
               <button
@@ -860,6 +870,19 @@ export function WeaponStatsTab({ weapons }: { weapons: WeaponData[] }) {
                             </span>
                           </div>
                         </>
+                      ) : isPixelCity ? (
+                        <>
+                          <div className="p-2 rounded-xl bg-surface/80 border border-ink-100/50">
+                            <span className="text-ink-400 block text-[10px]">圣物满炼攻击加成</span>
+                            <span className="font-bold text-ink-900 mt-0.5 block">{lv1Atk} ➔ {lv90Atk}</span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-surface/80 border border-ink-100/50">
+                            <span className="text-ink-400 block text-[10px]">圣物副属性加成</span>
+                            <span className="font-bold text-accent-700 mt-0.5 block truncate">
+                              {subStatName || '暴击率/暴伤加成'}
+                            </span>
+                          </div>
+                        </>
                       ) : isNaraka ? (
                         <>
                           <div className="p-2 rounded-xl bg-surface/80 border border-ink-100/50">
@@ -895,7 +918,9 @@ export function WeaponStatsTab({ weapons }: { weapons: WeaponData[] }) {
                 {normalizedRefinements && normalizedRefinements.length > 0 && (
                   <div className="mt-3.5 pt-3 border-t border-ink-100/60 text-xs text-ink-600 line-clamp-2 leading-relaxed">
                     <span className="font-bold text-ink-800 mr-1">
-                      {isNaraka
+                      {isPixelCity
+                        ? '专属真神特效 / 契约:'
+                        : isNaraka
                         ? '独门武学 / 绝招被动:'
                         : isItem
                         ? '装备属性与被动:'
@@ -998,6 +1023,10 @@ export function ArtifactStatsTab({ artifacts }: { artifacts: ArtifactData[] }) {
     return artifacts.some((a) => a.gameId === 20 || a.name?.includes('魂玉') || a.rulesReference?.type?.includes('魂玉') || a.twoPieceBonus?.includes('魂玉') || a.twoPieceBonus?.includes('招式质变'))
   }, [artifacts])
 
+  const isPixelRune = useMemo(() => {
+    return artifacts.some((a) => a.gameId === 32 || a.name?.includes('符文套') || a.iconUrl?.includes('pixel_runes'))
+  }, [artifacts])
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return artifacts
@@ -1037,7 +1066,9 @@ export function ArtifactStatsTab({ artifacts }: { artifacts: ArtifactData[] }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={
-                isSouljade
+                isPixelRune
+                  ? "搜索阵奕符文名称、2件套/4件套效果 (如: 爆裂、怒气压制、神圣屏障、虚空噬魂)..."
+                  : isSouljade
                   ? "搜索专属魂玉名称、属性或招式质变效果 (如: 噬魂斩、烈火斩、夺魂、幽冥步)..."
                   : isHokInscription
                   ? "搜索铭文流派、效果或推荐英雄 (如: 无双、夺萃、鹰眼、百穿)..."
@@ -1071,7 +1102,7 @@ export function ArtifactStatsTab({ artifacts }: { artifacts: ArtifactData[] }) {
           <div className="flex items-center gap-2 justify-between sm:justify-end text-xs">
             <span className="text-ink-500 font-medium">
               共 <strong className="text-ink-900 font-bold">{artifacts.length}</strong>{' '}
-              {isSouljade ? '枚专属魂玉' : isHokInscription ? '套铭文体系' : isArknightsBranch ? '个职业分支' : isZzzDisc ? '套驱动盘' : isRune ? '套符文体系' : isRelic ? '套遗器与饰品' : isArmor ? '套披挂防具' : isTalisman ? '套传奇护符组合' : isZeldaArmor ? '套防具套装' : '套圣遗物'}，当前展示{' '}
+              {isPixelRune ? '套阵奕符文/契约' : isSouljade ? '枚专属魂玉' : isHokInscription ? '套铭文体系' : isArknightsBranch ? '个职业分支' : isZzzDisc ? '套驱动盘' : isRune ? '套符文体系' : isRelic ? '套遗器与饰品' : isArmor ? '套披挂防具' : isTalisman ? '套传奇护符组合' : isZeldaArmor ? '套防具套装' : '套圣遗物'}，当前展示{' '}
               <strong className="text-accent-600 font-bold">{filtered.length}</strong> {isSouljade ? '枚' : '套'}
             </span>
             {isFiltered && (

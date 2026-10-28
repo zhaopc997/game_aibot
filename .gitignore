@@ -16,6 +16,8 @@ vite.config.ts.timestamp-*
 .venv*/
 venv/
 .workbuddy/
+__pycache__/
+*.pyc
 
 # ───── 日志与运行时数据 ─────
 *.log
