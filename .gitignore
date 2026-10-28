@@ -36,3 +36,8 @@ backups/
 # 外链图片下载缓存（迁移 COS 用，不入库）
 .media_cache/
 .cos.env
+
+# 告警配置（含 webhook 地址，属凭据）
+.alert.env
+# 巡检状态（去重/重提醒用）
+.health-state

@@ -108,3 +108,72 @@ cd /opt/Ai-Novel && sudo docker compose start
 ```
 
 > 注意：两者合计约 760M 内存，恢复后会挤占本应用的余量。
+
+---
+
+## 巡检告警（2026-10-28 新增）
+
+### 为什么加
+
+2026-10-27 发生过一次真实事故：后端容器重建后，前端 nginx 缓存了旧 IP，
+`/api` 全线 502 持续约 6 小时。巡检脚本每 10 分钟都记录了 `[FAIL]`，
+**但只写日志、没有任何通知渠道**，等于没有监控。
+
+### 组成
+
+| 文件 | 作用 |
+|---|---|
+| `scripts/health-check.sh` | 巡检 + 告警判定（去重 / 重提醒 / 恢复通知 / 心跳） |
+| `scripts/alert.sh` | 多通道发送器（企业微信 / 钉钉 / 通用 webhook） |
+| `.alert.env` | 渠道配置（含密钥，600 权限，已 gitignore） |
+| `.health-state` | 去重状态（记录上次告警时间与故障签名） |
+
+### 配置（必须做，否则只写日志不发通知）
+
+```bash
+ssh ubuntu@111.229.224.236
+cd /opt/GameGuide
+cp .alert.env.example .alert.env
+chmod 600 .alert.env
+vi .alert.env      # 填 WECOM_WEBHOOK（企业微信群机器人）
+```
+
+企业微信群机器人获取：群聊 → 右上角 → 群机器人 → 添加 → 复制 Webhook 地址。
+
+### 告警策略
+
+不是"每次失败都发"，否则故障持续时每 10 分钟一条，很快就会被忽略：
+
+| 情况 | 行为 |
+|---|---|
+| 新故障 | 立即告警 |
+| 同一批故障再次检出 | **静默**（按故障签名 md5 判重） |
+| 故障内容变化（新增失败项） | 告警 |
+| 同一故障持续超过 6 小时 | 重提醒一次 |
+| 恢复正常 | 发「已恢复」通知 |
+| 持续正常 | 不发，只写心跳 |
+
+重提醒间隔可调：`RENOTIFY_AFTER=3600 bash scripts/health-check.sh --quiet`
+
+### 心跳
+
+每次运行都追加一行，即使一切正常：
+
+```
+[2026-10-28 09:48:06] heartbeat status=ok fails=0 warns=0 games=31 guides=52 es=52 hit=17
+```
+
+这条的价值：能区分「系统健康」和「巡检根本没在跑」。
+之前 `--quiet` 模式下健康时零输出，日志不增长，两种状态无法辨别。
+
+### 日志轮转
+
+`/etc/logrotate.d/gameguide`：每周轮转、保留 8 份、压缩、`copytruncate`。
+
+### 手动排查
+
+```bash
+sudo tail -20 /var/log/game-health.log      # 最近巡检结果与心跳
+sudo cat /opt/GameGuide/.health-state       # 当前状态与上次告警时间
+sudo bash /opt/GameGuide/scripts/alert.sh "测试" "内容" fail   # 测试通道
+```
